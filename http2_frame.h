@@ -14,7 +14,6 @@
 #define PREFACE_LEN 24
 
 class http2_frame;                  // Header of frame
-class http2_frame_payload;          // Abstract class for frame payload
 
 /*
     Classes below are payload classes.
@@ -69,66 +68,35 @@ typedef enum _HTTP2_FRAME_FLAG {
     +---------------------------------------------------------------+
 */
 class http2_frame {
-    friend class http2_frame_payload;
 public:
-    http2_frame(http2_frame_payload* payload) : frame_payload(payload) {};
-    http2_frame(const char* buff, const int len);
-    http2_frame(const int fd);
-    ~http2_frame();
+    friend http2_frame* http2_recv_frame(int fd);
 
     uint32_t get_length() { return length; }
     HTTP2_FRAME_TYPE get_type() { return type; }
     uint8_t get_flags() { return flags; }
     uint32_t get_stream_id() { return stream_id; }
     bool get_reserved() { return reserved; }
-    http2_frame_payload* get_frame_payload() { return frame_payload; }
-    Buffer* get_frame_stream();
 
+    Buffer* get_frame_stream();
+    virtual Buffer* get_frame_payload_stream() = 0;
+
+    void set_flags(uint8_t f) { flags = flags | f; }
+    void clear_flags(uint8_t f) { flags = flags & ~f; }
     bool has_flags(uint8_t f) { return ((flags & f) == f); }
 
-    void set_length(uint32_t len) { length = len; }
-    void set_type(uint8_t t) { type = (HTTP2_FRAME_TYPE)t; }
-    void set_flags(uint8_t f) { flags = f; }
     void set_stream_id(uint32_t id) { stream_id = id; }
-    void set_reserved(bool r) { reserved = r; }
 
-    int recv_frame(const int fd);
     int send_frame(const int fd);
 
-private:
+protected:
     void parse_frame_header(const char* buff, const int len);
-    void parse_frame_payload(const char* buff, const int len);
+    virtual void parse_frame_payload(const char* buff, const int len) = 0;
 
     uint32_t length = 0;
     HTTP2_FRAME_TYPE type = HTTP2_SETTINGS_FRAME;
     uint8_t flags = 0;
     uint32_t stream_id = 0;
     bool reserved = false;
-    http2_frame_payload *frame_payload = nullptr;
-};
-
-/*
-    Abstract class for frame payload.
-*/
-class http2_frame_payload {
-    friend class http2_frame;
-public:
-    ~http2_frame_payload() {}
-    http2_frame_payload() : frame_header(new http2_frame(this)) {};
-    http2_frame_payload(http2_frame* header) : frame_header(header) {};
-
-    virtual Buffer* get_frame_payload_stream() = 0;
-    http2_frame* get_frame_header() { return frame_header; }
-
-    int send_frame(const int fd);
-
-protected:
-    uint8_t get_flags() { return frame_header->get_flags(); }
-    bool has_flags(uint8_t flags) { return (frame_header->get_flags() & flags) == flags; }
-    void set_flags(uint8_t flags) { frame_header->set_flags(frame_header->get_flags() | flags); }
-    void clear_flags(uint8_t flags) { frame_header->set_flags(frame_header->get_flags() & ~flags); }
-
-    http2_frame* frame_header = nullptr;
 };
 
 /*
@@ -149,9 +117,10 @@ protected:
     |                           Padding (*)                       ...
     +---------------------------------------------------------------+
 */
-class http2_data_frame final : public http2_frame_payload {
+class http2_data_frame final : public http2_frame {
 public:
-    http2_data_frame(const char* buff, const int len, http2_frame* frame_header);
+    http2_data_frame();
+    http2_data_frame(Buffer& data, int pad_length);
 
     uint8_t get_pad_length() { return pad_length; }
     Buffer& get_data() { return data; }
@@ -161,7 +130,7 @@ public:
         if(len > 0) set_padded_flag();
         else clear_padded_flag();
     }
-    // void set_data(char* d) { data = d; }
+    void set_data(Buffer& data);
 
     bool has_end_stream_flag() { return has_flags(HTTP2_FLAG_END_STREAM); }
     bool has_padded_flag() { return has_flags(HTTP2_FLAG_PADDED); }
@@ -175,6 +144,8 @@ public:
     Buffer* get_frame_payload_stream() override;
 
 private:
+    void parse_frame_payload(const char* buff, const int len) override;
+
     uint8_t pad_length = 0;
     Buffer data;
 };
@@ -199,9 +170,9 @@ private:
     |                           Padding (*)                       ...
     +---------------------------------------------------------------+
 */
-class http2_headers_frame final : public http2_frame_payload {
+class http2_headers_frame final : public http2_frame {
 public:
-    http2_headers_frame(const char* buff, const int len, http2_frame* frame_header);
+    http2_headers_frame();
 
     uint8_t get_pad_length() { return pad_length; }
     bool get_exclusive() { return exclusive; }
@@ -237,6 +208,8 @@ public:
     Buffer* get_frame_payload_stream() override;
 
 private:
+    void parse_frame_payload(const char* buff, const int len) override;
+
     uint8_t pad_length = 0;
     bool exclusive = false;
     uint32_t stream_dependency = 0;
@@ -257,9 +230,9 @@ private:
     |   Weight (8)  |
     +-+-------------+
 */
-class http2_priority_frame final : public http2_frame_payload {
+class http2_priority_frame final : public http2_frame {
 public:
-    http2_priority_frame(const char* buff, const int len, http2_frame* frame_header);
+    http2_priority_frame();
 
     bool get_exclusive() { return exclusive; }
     uint32_t get_stream_dependency() { return stream_dependency; }
@@ -272,6 +245,8 @@ public:
     Buffer* get_frame_payload_stream() override;
 
 private:
+    void parse_frame_payload(const char* buff, const int len) override;
+
     bool exclusive = false;
     uint32_t stream_dependency = 0;
     uint8_t weight = 0;
@@ -289,9 +264,9 @@ private:
     |                        Error Code (32)                        |
     +---------------------------------------------------------------+
 */
-class http2_rst_stream_frame final : public http2_frame_payload {
+class http2_rst_stream_frame final : public http2_frame {
 public:
-    http2_rst_stream_frame(const char* buff, const int len, http2_frame* frame_header);
+    http2_rst_stream_frame();
 
     bool get_error_code() { return error_code; }
 
@@ -300,6 +275,8 @@ public:
     Buffer* get_frame_payload_stream() override;
 
 private:
+    void parse_frame_payload(const char* buff, const int len) override;
+
     uint32_t error_code = 0;
 };
 
@@ -318,7 +295,7 @@ private:
     |                        Value (32)                             |
     +---------------------------------------------------------------+
 */
-class http2_settings_frame final : public http2_frame_payload {
+class http2_settings_frame final : public http2_frame {
 public:
     typedef enum _SETTINGS_PARAMETERS {
         SETTINGS_HEADER_TABLE_SIZE = 0x1,
@@ -328,13 +305,13 @@ public:
         SETTINGS_MAX_FRAME_SIZE,
         SETTINGS_MAX_HEADER_LIST_SIZE,
     } SETTINGS_PARAMETERS;
+
     http2_settings_frame() {};
-    http2_settings_frame(const char* buff, const int len, http2_frame* frame_header);
     http2_settings_frame(http2_settings set);
 
-    http2_settings* get_settings() { return &settings; }
+    http2_settings get_settings() { return settings; }
 
-    void set_settings(http2_settings set) { settings = set; }
+    void set_settings(http2_settings set);
 
     bool has_ack_flag() { return has_flags(HTTP2_FLAG_ACK); }
     void set_ack_flag() { set_flags(HTTP2_FLAG_ACK); }
@@ -343,6 +320,8 @@ public:
     Buffer* get_frame_payload_stream() override;
 
 private:
+    void parse_frame_payload(const char* buff, const int len) override;
+
     http2_settings settings;
 };
 
@@ -365,9 +344,9 @@ private:
     |                           Padding (*)                       ...
     +---------------------------------------------------------------+
 */
-class http2_push_promise_frame final : public http2_frame_payload {
+class http2_push_promise_frame final : public http2_frame {
 public:
-    http2_push_promise_frame(const char* buff, const int len, http2_frame* frame_header);
+    http2_push_promise_frame();
 
     uint8_t get_pad_length() { return pad_length; }
     bool get_reserved() { return reserved; }
@@ -394,6 +373,8 @@ public:
     Buffer* get_frame_payload_stream() override;
 
 private:
+    void parse_frame_payload(const char* buff, const int len) override;
+
     uint8_t pad_length = 0;
     bool reserved = false;
     uint32_t promised_stream_id;
@@ -414,7 +395,7 @@ private:
     |                                                               |
     +---------------------------------------------------------------+
 */
-class http2_ping_frame final : public http2_frame_payload {
+class http2_ping_frame final : public http2_frame {
 public:
     http2_ping_frame() {};
     http2_ping_frame(const char* buff, const int len, http2_frame* frame_header);
@@ -430,6 +411,8 @@ public:
     Buffer* get_frame_payload_stream() override;
 
 private:
+    void parse_frame_payload(const char* buff, const int len) override;
+
     uint64_t opaque_data = 0;
 };
 
@@ -450,9 +433,9 @@ private:
     |                  Additional Debug Data (*)                    |
     +---------------------------------------------------------------+
 */
-class http2_goaway_frame final : public http2_frame_payload {
+class http2_goaway_frame final : public http2_frame {
 public:
-    http2_goaway_frame(const char* buff, const int len, http2_frame* frame_header);
+    http2_goaway_frame();
 
     bool get_reserved() { return reserved; }
     uint32_t get_last_stream_id() { return last_stream_id; }
@@ -466,6 +449,8 @@ public:
     Buffer* get_frame_payload_stream() override;
 
 private:
+    void parse_frame_payload(const char* buff, const int len) override;
+
     bool reserved = false;
     uint32_t last_stream_id;
     uint32_t error_code;
@@ -481,9 +466,9 @@ private:
     |R|              Window Size Increment (31)                     |
     +-+-------------------------------------------------------------+
 */
-class http2_window_update_frame final : public http2_frame_payload {
+class http2_window_update_frame final : public http2_frame {
 public:
-    http2_window_update_frame(const char* buff, const int len, http2_frame* frame_header);
+    http2_window_update_frame();
     http2_window_update_frame(int size);
 
     bool get_reserved() { return reserved; }
@@ -495,6 +480,8 @@ public:
     Buffer* get_frame_payload_stream() override;
 
 private:
+    void parse_frame_payload(const char* buff, const int len) override;
+
     bool reserved = false;
     uint32_t window_size_increment;
 };
@@ -511,9 +498,9 @@ private:
     |                   Header Block Fragment (*)                 ...
     +---------------------------------------------------------------+
 */
-class http2_continuation_frame final : public http2_frame_payload {
+class http2_continuation_frame final : public http2_frame {
 public:
-    http2_continuation_frame(const char* buff, const int len, http2_frame* frame_header);
+    http2_continuation_frame();
 
     Buffer& get_header_block_fragment() { return header_block_fragment; }
 
@@ -524,13 +511,16 @@ public:
     Buffer* get_frame_payload_stream() override;
 
 private:
+    void parse_frame_payload(const char* buff, const int len) override;
+
     Buffer header_block_fragment;
 };
 
 void http2_send_preface(int fd);
 bool http2_check_preface(int fd);
 
-http2_frame* http2_get_frame(int fd);
+http2_frame* http2_recv_frame(int fd);
+
 const char* http2_get_frame_type_name(HTTP2_FRAME_TYPE type);
 
 #endif
