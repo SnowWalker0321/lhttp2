@@ -314,9 +314,9 @@ public:
 
     void set_settings(http2_settings set);
 
-    bool has_ack_flag() { return has_flags(HTTP2_FLAG_ACK); }
-    void set_ack_flag() { set_flags(HTTP2_FLAG_ACK); }
-    void clear_ack_flag() { clear_flags(HTTP2_FLAG_ACK); }
+    bool has_ack_flag();
+    void set_ack_flag();
+    void clear_ack_flag();
 
     Buffer* get_frame_payload_stream() override;
 

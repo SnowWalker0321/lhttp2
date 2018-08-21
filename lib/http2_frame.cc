@@ -83,7 +83,7 @@ http2_data_frame::http2_data_frame() {
     type = HTTP2_DATA_FRAME;
 }
 
-http2_data_frame::http2_data_frame(Buffer d, uint8_t p_len = 0) {
+http2_data_frame::http2_data_frame(Buffer d, uint8_t p_len) {
     http2_data_frame();
 
     pad_length = p_len;
@@ -183,7 +183,7 @@ http2_headers_frame::http2_headers_frame() {
     type = HTTP2_HEADERS_FRAME;
 }
 
-http2_headers_frame::http2_headers_frame(Buffer h, uint8_t p_len = 0) {
+http2_headers_frame::http2_headers_frame(Buffer h, uint8_t p_len) {
     http2_headers_frame();
 
     pad_length = p_len;
@@ -197,7 +197,7 @@ http2_headers_frame::http2_headers_frame(Buffer h, uint8_t p_len = 0) {
     update_length();
 }
 
-http2_headers_frame::http2_headers_frame(Buffer h, bool e, uint32_t s_dep, uint8_t w, uint8_t p_len = 0) {
+http2_headers_frame::http2_headers_frame(Buffer h, bool e, uint32_t s_dep, uint8_t w, uint8_t p_len) {
     http2_headers_frame();
 
     pad_length = p_len;
@@ -620,7 +620,7 @@ http2_push_promise_frame::http2_push_promise_frame() {
     length = 4;
 }
 
-http2_push_promise_frame::http2_push_promise_frame(uint32_t stream_id, Buffer header, uint8_t p_len = 0) {
+http2_push_promise_frame::http2_push_promise_frame(uint32_t stream_id, Buffer header, uint8_t p_len) {
     http2_push_promise_frame();
 
     promised_stream_id = stream_id;
