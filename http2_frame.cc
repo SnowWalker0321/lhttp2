@@ -25,6 +25,9 @@ http2_data_frame::http2_data_frame(Buffer& d, int p_len) {
     }
 }
 
+http2_data_frame::~http2_data_frame() {
+}
+
 bool http2_data_frame::parse_frame_payload(const char* buff, const int len) {
     int idx = 0;
 
@@ -61,6 +64,9 @@ Buffer* http2_data_frame::get_frame_payload_stream() {
 */
 http2_headers_frame::http2_headers_frame() {
     type = HTTP2_HEADERS_FRAME;
+}
+
+http2_headers_frame::~http2_headers_frame() {
 }
 
 bool http2_headers_frame::parse_frame_payload(const char* buff, const int len) {
@@ -114,6 +120,9 @@ http2_priority_frame::http2_priority_frame() {
     length = 5;
 }
 
+http2_priority_frame::~http2_priority_frame() {
+}
+
 bool http2_priority_frame::parse_frame_payload(const char* buff, const int len) {
     exclusive = GET_1BIT(buff, 0x01);
     stream_dependency = GET_4B_INT(buff, 0x7FFFFFFF);
@@ -142,6 +151,9 @@ http2_rst_stream_frame::http2_rst_stream_frame() {
     length = 4;
 }
 
+http2_rst_stream_frame::~http2_rst_stream_frame() {
+}
+
 bool http2_rst_stream_frame::parse_frame_payload(const char* buff, const int len) {
     error_code = GET_4B_INT(buff, 0xFFFFFFFF);
 
@@ -166,6 +178,9 @@ http2_settings_frame::http2_settings_frame() {
 http2_settings_frame::http2_settings_frame(http2_settings set) {
     http2_settings_frame();
     set_settings(set);
+}
+
+http2_settings_frame::~http2_settings_frame() {
 }
 
 void http2_settings_frame::set_settings(http2_settings set) {
@@ -278,6 +293,9 @@ http2_push_promise_frame::http2_push_promise_frame() {
     length = 4;
 }
 
+http2_push_promise_frame::~http2_push_promise_frame() {
+}
+
 bool http2_push_promise_frame::parse_frame_payload(const char* buff, const int len) {
     int idx = 0;
 
@@ -321,6 +339,9 @@ http2_ping_frame::http2_ping_frame() {
     length = 8;
 }
 
+http2_ping_frame::~http2_ping_frame() {
+}
+
 bool http2_ping_frame::parse_frame_payload(const char* buff, const int len) {
     opaque_data = GET_8B_INT(buff, 0xFFFFFFFFFFFFFFFF);
 
@@ -341,6 +362,9 @@ Buffer* http2_ping_frame::get_frame_payload_stream() {
 http2_goaway_frame::http2_goaway_frame() {
     type = HTTP2_GOAWAY_FRAME;
     length = 8;
+}
+
+http2_goaway_frame::~http2_goaway_frame() {
 }
 
 bool http2_goaway_frame::parse_frame_payload(const char* buff, const int len) {
@@ -381,6 +405,9 @@ http2_window_update_frame::http2_window_update_frame(int size) {
     window_size_increment = (uint32_t)size;
 }
 
+http2_window_update_frame::~http2_window_update_frame() {
+}
+
 bool http2_window_update_frame::parse_frame_payload(const char* buff, const int len) {
     reserved = GET_1BIT(buff, 0x01);
     window_size_increment = GET_4B_INT(buff, 0x7FFFFFFF);
@@ -406,6 +433,9 @@ http2_continuation_frame::http2_continuation_frame() {
     type = HTTP2_CONTINUATION_FRAME;
 }
 
+http2_continuation_frame::~http2_continuation_frame() {
+}
+
 bool http2_continuation_frame::parse_frame_payload(const char* buff, const int len) {
     header_block_fragment.copy_buffer(buff, len, 0);
 
@@ -415,9 +445,6 @@ bool http2_continuation_frame::parse_frame_payload(const char* buff, const int l
 Buffer* http2_continuation_frame::get_frame_payload_stream() {
     Buffer *stream = new Buffer(header_block_fragment);
     return stream;
-}
-
-http2_frame::~http2_frame() {
 }
 
 Buffer* http2_frame::get_frame_stream() {

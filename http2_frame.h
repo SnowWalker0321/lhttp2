@@ -71,7 +71,7 @@ class http2_frame {
 public:
     friend http2_frame* http2_recv_frame(int fd);
 
-    virtual ~http2_frame();
+    virtual ~http2_frame() {};
 
     uint32_t get_length() { return length; }
     HTTP2_FRAME_TYPE get_type() { return type; }
@@ -122,6 +122,7 @@ class http2_data_frame final : public http2_frame {
 public:
     http2_data_frame();
     http2_data_frame(Buffer& data, int pad_length);
+    ~http2_data_frame();
 
     uint8_t get_pad_length() { return pad_length; }
     Buffer& get_data() { return data; }
@@ -174,6 +175,7 @@ private:
 class http2_headers_frame final : public http2_frame {
 public:
     http2_headers_frame();
+    ~http2_headers_frame();
 
     uint8_t get_pad_length() { return pad_length; }
     bool get_exclusive() { return exclusive; }
@@ -234,6 +236,7 @@ private:
 class http2_priority_frame final : public http2_frame {
 public:
     http2_priority_frame();
+    ~http2_priority_frame();
 
     bool get_exclusive() { return exclusive; }
     uint32_t get_stream_dependency() { return stream_dependency; }
@@ -268,6 +271,7 @@ private:
 class http2_rst_stream_frame final : public http2_frame {
 public:
     http2_rst_stream_frame();
+    ~http2_rst_stream_frame();
 
     bool get_error_code() { return error_code; }
 
@@ -309,6 +313,7 @@ public:
 
     http2_settings_frame();
     http2_settings_frame(http2_settings set);
+    ~http2_settings_frame();
 
     http2_settings get_settings() { return settings; }
 
@@ -348,6 +353,7 @@ private:
 class http2_push_promise_frame final : public http2_frame {
 public:
     http2_push_promise_frame();
+    ~http2_push_promise_frame();
 
     uint8_t get_pad_length() { return pad_length; }
     bool get_reserved() { return reserved; }
@@ -399,6 +405,7 @@ private:
 class http2_ping_frame final : public http2_frame {
 public:
     http2_ping_frame();
+    ~http2_ping_frame();
 
     uint64_t get_opaque_data() { return opaque_data; }
 
@@ -436,6 +443,7 @@ private:
 class http2_goaway_frame final : public http2_frame {
 public:
     http2_goaway_frame();
+    ~http2_goaway_frame();
 
     bool get_reserved() { return reserved; }
     uint32_t get_last_stream_id() { return last_stream_id; }
@@ -470,6 +478,7 @@ class http2_window_update_frame final : public http2_frame {
 public:
     http2_window_update_frame();
     http2_window_update_frame(int size);
+    ~http2_window_update_frame();
 
     bool get_reserved() { return reserved; }
     uint32_t get_window_size_increment() { return window_size_increment; }
@@ -501,6 +510,7 @@ private:
 class http2_continuation_frame final : public http2_frame {
 public:
     http2_continuation_frame();
+    ~http2_continuation_frame();
 
     Buffer& get_header_block_fragment() { return header_block_fragment; }
 
