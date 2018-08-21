@@ -2,7 +2,6 @@
 #define _HTTP2_FRAME_H_
 
 #include <stdint.h>
-#include <iostream>
 
 #include "Buffer.h"
 #include "http2_settings.h"
@@ -64,29 +63,30 @@ typedef enum _HTTP2_FRAME_FLAG {
 */
 class http2_frame {
 public:
-    friend http2_frame* http2_recv_frame(int fd);
+    friend http2_frame* http2_recv_frame(const int fd);
 
-    virtual ~http2_frame() {};
+    virtual ~http2_frame() = 0;
 
-    uint32_t get_length() { return length; }
-    HTTP2_FRAME_TYPE get_type() { return type; }
-    uint8_t get_flags() { return flags; }
-    uint32_t get_stream_id() { return stream_id; }
-    bool get_reserved() { return reserved; }
+    uint32_t get_length();
+    HTTP2_FRAME_TYPE get_type();
+    uint8_t get_flags();
+    uint32_t get_stream_id();
+    bool get_reserved();
+
+    void set_flags(uint8_t flags);
+    void clear_flags(uint8_t flags);
+    bool has_flags(uint8_t flags);
+
+    void set_stream_id(uint32_t stream_id);
 
     Buffer* get_frame_stream();
     virtual Buffer* get_frame_payload_stream() = 0;
-
-    void set_flags(uint8_t f) { flags = flags | f; }
-    void clear_flags(uint8_t f) { flags = flags & ~f; }
-    bool has_flags(uint8_t f) { return ((flags & f) == f); }
-
-    void set_stream_id(uint32_t id) { stream_id = id; }
 
     int send_frame(const int fd);
 
 protected:
     virtual bool parse_frame_payload(const char* buff, const int len) = 0;
+    virtual void update_length() = 0;
 
     uint32_t length = 0;
     HTTP2_FRAME_TYPE type = HTTP2_SETTINGS_FRAME;
@@ -116,32 +116,29 @@ protected:
 class http2_data_frame final : public http2_frame {
 public:
     http2_data_frame();
-    http2_data_frame(Buffer& data, int pad_length);
+    http2_data_frame(Buffer data, uint8_t pad_length = 0);
     ~http2_data_frame();
 
-    uint8_t get_pad_length() { return pad_length; }
-    Buffer& get_data() { return data; }
+    uint8_t get_pad_length();
+    Buffer get_data();
 
-    void set_pad_length(uint8_t len) {
-        pad_length = len;
-        if(len > 0) set_padded_flag();
-        else clear_padded_flag();
-    }
+    void set_pad_length(uint8_t pad_length);
     void set_data(Buffer& data);
 
-    bool has_end_stream_flag() { return has_flags(HTTP2_FLAG_END_STREAM); }
-    bool has_padded_flag() { return has_flags(HTTP2_FLAG_PADDED); }
+    bool has_end_stream_flag();
+    bool has_padded_flag();
 
-    void set_end_stream_flag() { set_flags(HTTP2_FLAG_END_STREAM); }
-    void set_padded_flag() { set_flags(HTTP2_FLAG_PADDED); }
+    void set_end_stream_flag();
+    void set_padded_flag();
 
-    void clear_end_stream_flag() { clear_flags(HTTP2_FLAG_END_HEADERS); }
-    void clear_padded_flag() { clear_flags(HTTP2_FLAG_PADDED); }
+    void clear_end_stream_flag();
+    void clear_padded_flag();
 
     Buffer* get_frame_payload_stream() override;
 
 private:
     bool parse_frame_payload(const char* buff, const int len) override;
+    void update_length() override;
 
     uint8_t pad_length = 0;
     Buffer data;
@@ -170,43 +167,42 @@ private:
 class http2_headers_frame final : public http2_frame {
 public:
     http2_headers_frame();
+    http2_headers_frame(Buffer header, uint8_t pad_length);
+    http2_headers_frame(Buffer header, bool exclusive, uint32_t stream_dependency, uint8_t weight, uint8_t pad_length = 0);
     ~http2_headers_frame();
 
-    uint8_t get_pad_length() { return pad_length; }
-    bool get_exclusive() { return exclusive; }
-    uint32_t get_stream_dependency() { return stream_dependency; }
-    uint8_t get_weight() { return weight; }
-    Buffer& get_header() { return header; }
+    uint8_t get_pad_length();
+    bool get_exclusive();
+    uint32_t get_stream_dependency();
+    uint8_t get_weight();
+    Buffer get_header();
 
-    void set_pad_length(uint8_t len) {
-        pad_length = len;
-        if(len > 0) set_padded_flag();
-        else clear_padded_flag();
-    }
-    void set_exclusive(bool e) { exclusive = e; }
-    void set_stream_dependency(uint32_t dep) { stream_dependency = dep; }
-    void set_weight(uint8_t w) { weight = w; }
-    // void set_header(char* h) { header = h; }
+    void set_pad_length(uint8_t pad_length);
+    void set_exclusive(bool exclusive);
+    void set_stream_dependency(uint32_t stream_dependency);
+    void set_weight(uint8_t weight);
+    void set_header(Buffer& header);
 
-    bool has_end_stream_flag() { return has_flags(HTTP2_FLAG_END_STREAM); }
-    bool has_end_headers_flag() { return has_flags(HTTP2_FLAG_END_HEADERS); }
-    bool has_padded_flag() { return has_flags(HTTP2_FLAG_PADDED); }
-    bool has_priority_flag() { return has_flags(HTTP2_FLAG_PRIORITY); }
+    bool has_end_stream_flag();
+    bool has_end_headers_flag();
+    bool has_padded_flag();
+    bool has_priority_flag();
 
-    void set_end_stream_flag() { set_flags(HTTP2_FLAG_END_STREAM); }
-    void set_end_headers_flag() { set_flags(HTTP2_FLAG_END_HEADERS); }
-    void set_padded_flag() { set_flags(HTTP2_FLAG_PADDED); }
-    void set_priority_flag() { set_flags(HTTP2_FLAG_PRIORITY); }
+    void set_end_stream_flag();
+    void set_end_headers_flag();
+    void set_padded_flag();
+    void set_priority_flag();
 
-    void clear_end_stream_flag() { clear_flags(HTTP2_FLAG_END_STREAM); }
-    void clear_end_headers_flag() { clear_flags(HTTP2_FLAG_END_HEADERS); }
-    void clear_padded_flag() { clear_flags(HTTP2_FLAG_PADDED); }
-    void clear_priority_flag() { clear_flags(HTTP2_FLAG_PRIORITY); }
+    void clear_end_stream_flag();
+    void clear_end_headers_flag();
+    void clear_padded_flag();
+    void clear_priority_flag();
 
     Buffer* get_frame_payload_stream() override;
 
 private:
     bool parse_frame_payload(const char* buff, const int len) override;
+    void update_length() override;
 
     uint8_t pad_length = 0;
     bool exclusive = false;
@@ -231,20 +227,22 @@ private:
 class http2_priority_frame final : public http2_frame {
 public:
     http2_priority_frame();
+    http2_priority_frame(bool exclusive, uint32_t stream_dependency, uint8_t weight);
     ~http2_priority_frame();
 
-    bool get_exclusive() { return exclusive; }
-    uint32_t get_stream_dependency() { return stream_dependency; }
-    uint8_t get_weight() { return weight; }
+    bool get_exclusive();
+    uint32_t get_stream_dependency();
+    uint8_t get_weight();
 
-    void set_exclusive(bool e) { exclusive = e; }
-    void set_stream_dependency(uint32_t dep) { stream_dependency = dep; }
-    void set_weight(uint8_t w) { weight = w; }
+    void set_exclusive(bool exclusive);
+    void set_stream_dependency(uint32_t stream_dependency);
+    void set_weight(uint8_t weight);
 
     Buffer* get_frame_payload_stream() override;
 
 private:
     bool parse_frame_payload(const char* buff, const int len) override;
+    void update_length() override;
 
     bool exclusive = false;
     uint32_t stream_dependency = 0;
@@ -266,16 +264,18 @@ private:
 class http2_rst_stream_frame final : public http2_frame {
 public:
     http2_rst_stream_frame();
+    http2_rst_stream_frame(uint32_t error_code);
     ~http2_rst_stream_frame();
 
-    bool get_error_code() { return error_code; }
+    bool get_error_code();
 
-    void set_error_code(uint32_t e) { error_code = e; }
+    void set_error_code(uint32_t error_code);
 
     Buffer* get_frame_payload_stream() override;
 
 private:
     bool parse_frame_payload(const char* buff, const int len) override;
+    void update_length() override;
 
     uint32_t error_code = 0;
 };
@@ -310,7 +310,7 @@ public:
     http2_settings_frame(http2_settings set);
     ~http2_settings_frame();
 
-    http2_settings get_settings() { return settings; }
+    http2_settings get_settings();
 
     void set_settings(http2_settings set);
 
@@ -322,6 +322,7 @@ public:
 
 private:
     bool parse_frame_payload(const char* buff, const int len) override;
+    void update_length() override;
 
     http2_settings settings;
 };
@@ -348,34 +349,33 @@ private:
 class http2_push_promise_frame final : public http2_frame {
 public:
     http2_push_promise_frame();
+    http2_push_promise_frame(uint32_t promised_stream_id, Buffer header_block_fragment, uint8_t pad_length = 0);
     ~http2_push_promise_frame();
 
-    uint8_t get_pad_length() { return pad_length; }
-    bool get_reserved() { return reserved; }
-    uint32_t get_promised_stream_id() { return promised_stream_id; }
-    Buffer& get_header_block_fragment() { return header_block_fragment; }
+    uint8_t get_pad_length();
+    bool get_reserved();
+    uint32_t get_promised_stream_id();
+    Buffer get_header_block_fragment();
 
-    void set_pad_length(uint8_t len) {
-        pad_length = len;
-        if(len > 0) set_padded_flag();
-        else clear_padded_flag();
-    }
-    void set_reserved(bool r) { reserved = r; }
-    void set_promised_stream_id(uint32_t id) { promised_stream_id = id; }
+    void set_pad_length(uint8_t pad_length);
+    void set_reserved(bool reserved);
+    void set_promised_stream_id(uint32_t promised_stream_id);
+    void set_header_block_fragment(Buffer header_block_fragment);
 
-    bool has_end_headers_flag() { return has_flags(HTTP2_FLAG_END_HEADERS); }
-    bool has_padded_flag() { return has_flags(HTTP2_FLAG_PADDED); }
+    bool has_end_headers_flag();
+    bool has_padded_flag();
 
-    void set_end_headers_flag() { set_flags(HTTP2_FLAG_END_HEADERS); }
-    void set_padded_flag() { set_flags(HTTP2_FLAG_PADDED); }
+    void set_end_headers_flag();
+    void set_padded_flag();
     
-    void clear_end_headers_flag() { clear_flags(HTTP2_FLAG_END_HEADERS); }
-    void clear_padded_flag() { clear_flags(HTTP2_FLAG_PADDED); }
+    void clear_end_headers_flag();
+    void clear_padded_flag();
 
     Buffer* get_frame_payload_stream() override;
 
 private:
     bool parse_frame_payload(const char* buff, const int len) override;
+    void update_length() override;
 
     uint8_t pad_length = 0;
     bool reserved = false;
@@ -400,20 +400,21 @@ private:
 class http2_ping_frame final : public http2_frame {
 public:
     http2_ping_frame();
+    http2_ping_frame(uint64_t opaque_data);
     ~http2_ping_frame();
 
-    uint64_t get_opaque_data() { return opaque_data; }
+    uint64_t get_opaque_data();
+    void set_opaque_data(uint64_t data);
 
-    void set_opaque_data(uint64_t data) { opaque_data = data; }
-
-    bool has_ack_flag() { return has_flags(HTTP2_FLAG_ACK); }
-    void set_ack_flag() { set_flags(HTTP2_FLAG_ACK); }
-    void clear_ack_flag() { clear_flags(HTTP2_FLAG_ACK); }
+    bool has_ack_flag();
+    void set_ack_flag();
+    void clear_ack_flag();
 
     Buffer* get_frame_payload_stream() override;
 
 private:
     bool parse_frame_payload(const char* buff, const int len) override;
+    void update_length() override;
 
     uint64_t opaque_data = 0;
 };
@@ -438,26 +439,29 @@ private:
 class http2_goaway_frame final : public http2_frame {
 public:
     http2_goaway_frame();
+    http2_goaway_frame(uint32_t last_stream_id, uint32_t error_code, Buffer additional_debug_data);
     ~http2_goaway_frame();
 
-    bool get_reserved() { return reserved; }
-    uint32_t get_last_stream_id() { return last_stream_id; }
-    uint32_t get_error_code() { return error_code; }
-    Buffer& get_additional_opaque_data() { return additional_opaque_data; }
+    bool get_reserved();
+    uint32_t get_last_stream_id();
+    uint32_t get_error_code();
+    Buffer get_additional_debug_data();
 
-    void set_reserved(bool r) { reserved = r; }
-    void set_last_stream_id(uint32_t id) { last_stream_id = id; }
-    void set_error_code(uint32_t code) { error_code = code; }
+    void set_reserved(bool reserved);
+    void set_last_stream_id(uint32_t last_stream_id);
+    void set_error_code(uint32_t error_code);
+    void set_additional_debug_data(Buffer additional_debug_data);
 
     Buffer* get_frame_payload_stream() override;
 
 private:
     bool parse_frame_payload(const char* buff, const int len) override;
+    void update_length() override;
 
     bool reserved = false;
     uint32_t last_stream_id;
     uint32_t error_code;
-    Buffer additional_opaque_data;
+    Buffer additional_debug_data;
 };
 
 /*
@@ -472,19 +476,20 @@ private:
 class http2_window_update_frame final : public http2_frame {
 public:
     http2_window_update_frame();
-    http2_window_update_frame(int size);
+    http2_window_update_frame(uint32_t size);
     ~http2_window_update_frame();
 
-    bool get_reserved() { return reserved; }
-    uint32_t get_window_size_increment() { return window_size_increment; }
+    bool get_reserved();
+    uint32_t get_window_size_increment();
 
-    void set_reserved(bool r) { reserved = r; }
-    void set_window_size_increment(int size) { window_size_increment = size; }
+    void set_reserved(bool reserved);
+    void set_window_size_increment(int window_size_increment);
 
     Buffer* get_frame_payload_stream() override;
 
 private:
     bool parse_frame_payload(const char* buff, const int len) override;
+    void update_length() override;
 
     bool reserved = false;
     uint32_t window_size_increment;
@@ -505,23 +510,27 @@ private:
 class http2_continuation_frame final : public http2_frame {
 public:
     http2_continuation_frame();
+    http2_continuation_frame(Buffer header_block_fragment);
     ~http2_continuation_frame();
 
-    Buffer& get_header_block_fragment() { return header_block_fragment; }
+    Buffer get_header_block_fragment();
+    void set_header_block_fragment(Buffer header_block_fragment);
 
-    bool has_end_headers_flag() { return has_flags(HTTP2_FLAG_END_HEADERS); }
-    void set_end_headers_flag() { set_flags(HTTP2_FLAG_END_HEADERS); }
-    void clear_end_headers_flag() { clear_flags(HTTP2_FLAG_END_HEADERS); }
+    bool has_end_headers_flag();
+    void set_end_headers_flag();
+    void clear_end_headers_flag();
 
     Buffer* get_frame_payload_stream() override;
 
 private:
     bool parse_frame_payload(const char* buff, const int len) override;
+    void update_length() override;
 
     Buffer header_block_fragment;
 };
 
-http2_frame* http2_recv_frame(int fd);
+http2_frame* http2_recv_frame(const int fd);
+int http2_send_frame(http2_frame* frame, const int fd);
 
 const char* http2_get_frame_type_name(HTTP2_FRAME_TYPE type);
 
