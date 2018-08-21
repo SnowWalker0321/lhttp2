@@ -1,4 +1,10 @@
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
 #include "http2_connection.h"
+
+const char preface[] = PREFACE;
 
 http2_connection::http2_connection() {
 }
@@ -52,4 +58,28 @@ HTTP2_STREAM_STATUS http2_connection::get_stream_status(int id) {
     if(id >= stream_vector.size())
         return HTTP2_STREAM_IDLE;
     return stream_vector[id].get_status();
+}
+
+void http2_send_preface(int fd) {
+    ::send(fd, preface, PREFACE_LEN, 0);
+}
+
+bool http2_check_preface(const char* buffer, int len) {
+    if(len != PREFACE_LEN) return false;
+
+    for(int i = 0; i < PREFACE_LEN; i++)
+        if(preface[i] != buffer[i])
+            return false;
+
+    return true;
+}
+
+bool http2_recv_preface(int fd) {
+    char buffer[PREFACE_LEN];
+    int read_len;
+
+    read_len = ::read(fd, buffer, PREFACE_LEN);
+    if(read_len != PREFACE_LEN) return false;
+
+    return http2_check_preface(buffer, read_len);
 }

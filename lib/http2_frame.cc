@@ -8,8 +8,6 @@
 
 #include "http2_frame.h"
 
-const char preface[] = PREFACE;
-
 /*
     ### Implementation of DATA FRAME ###
 */
@@ -472,30 +470,6 @@ int http2_frame::send_frame(const int fd) {
     int len = ::send(fd, stream->buffer, stream->len, 0);
     delete stream;
     return len;
-}
-
-void http2_send_preface(int fd) {
-    ::send(fd, preface, PREFACE_LEN, 0);
-}
-
-bool http2_check_preface(const char* buffer, int len) {
-    if(len != PREFACE_LEN) return false;
-
-    for(int i = 0; i < PREFACE_LEN; i++)
-        if(preface[i] != buffer[i])
-            return false;
-
-    return true;
-}
-
-bool http2_check_preface(int fd) {
-    char buffer[PREFACE_LEN];
-    int read_len;
-
-    read_len = ::read(fd, buffer, PREFACE_LEN);
-    if(read_len != PREFACE_LEN) return false;
-
-    return http2_check_preface(buffer, read_len);
 }
 
 http2_frame* http2_recv_frame(int fd) {

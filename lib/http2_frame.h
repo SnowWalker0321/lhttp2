@@ -8,11 +8,6 @@
 #include "http2_settings.h"
 #include "http2_error.h"
 
-// The client connection preface starts with a sequence of 24 octets,
-// "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
-#define PREFACE "\x50\x52\x49\x20\x2a\x20\x48\x54\x54\x50\x2f\x32\x2e\x30\x0d\x0a\x0d\x0a\x53\x4d\x0d\x0a\x0d\x0a"
-#define PREFACE_LEN 24
-
 class http2_frame;                  // Header of frame
 
 /*
@@ -525,9 +520,6 @@ private:
 
     Buffer header_block_fragment;
 };
-
-void http2_send_preface(int fd);
-bool http2_check_preface(int fd);
 
 http2_frame* http2_recv_frame(int fd);
 
