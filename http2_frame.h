@@ -71,6 +71,8 @@ class http2_frame {
 public:
     friend http2_frame* http2_recv_frame(int fd);
 
+    virtual ~http2_frame();
+
     uint32_t get_length() { return length; }
     HTTP2_FRAME_TYPE get_type() { return type; }
     uint8_t get_flags() { return flags; }
@@ -89,8 +91,7 @@ public:
     int send_frame(const int fd);
 
 protected:
-    void parse_frame_header(const char* buff, const int len);
-    virtual void parse_frame_payload(const char* buff, const int len) = 0;
+    virtual bool parse_frame_payload(const char* buff, const int len) = 0;
 
     uint32_t length = 0;
     HTTP2_FRAME_TYPE type = HTTP2_SETTINGS_FRAME;
@@ -144,7 +145,7 @@ public:
     Buffer* get_frame_payload_stream() override;
 
 private:
-    void parse_frame_payload(const char* buff, const int len) override;
+    bool parse_frame_payload(const char* buff, const int len) override;
 
     uint8_t pad_length = 0;
     Buffer data;
@@ -208,7 +209,7 @@ public:
     Buffer* get_frame_payload_stream() override;
 
 private:
-    void parse_frame_payload(const char* buff, const int len) override;
+    bool parse_frame_payload(const char* buff, const int len) override;
 
     uint8_t pad_length = 0;
     bool exclusive = false;
@@ -245,7 +246,7 @@ public:
     Buffer* get_frame_payload_stream() override;
 
 private:
-    void parse_frame_payload(const char* buff, const int len) override;
+    bool parse_frame_payload(const char* buff, const int len) override;
 
     bool exclusive = false;
     uint32_t stream_dependency = 0;
@@ -275,7 +276,7 @@ public:
     Buffer* get_frame_payload_stream() override;
 
 private:
-    void parse_frame_payload(const char* buff, const int len) override;
+    bool parse_frame_payload(const char* buff, const int len) override;
 
     uint32_t error_code = 0;
 };
@@ -306,7 +307,7 @@ public:
         SETTINGS_MAX_HEADER_LIST_SIZE,
     } SETTINGS_PARAMETERS;
 
-    http2_settings_frame() {};
+    http2_settings_frame();
     http2_settings_frame(http2_settings set);
 
     http2_settings get_settings() { return settings; }
@@ -320,7 +321,7 @@ public:
     Buffer* get_frame_payload_stream() override;
 
 private:
-    void parse_frame_payload(const char* buff, const int len) override;
+    bool parse_frame_payload(const char* buff, const int len) override;
 
     http2_settings settings;
 };
@@ -373,7 +374,7 @@ public:
     Buffer* get_frame_payload_stream() override;
 
 private:
-    void parse_frame_payload(const char* buff, const int len) override;
+    bool parse_frame_payload(const char* buff, const int len) override;
 
     uint8_t pad_length = 0;
     bool reserved = false;
@@ -397,8 +398,7 @@ private:
 */
 class http2_ping_frame final : public http2_frame {
 public:
-    http2_ping_frame() {};
-    http2_ping_frame(const char* buff, const int len, http2_frame* frame_header);
+    http2_ping_frame();
 
     uint64_t get_opaque_data() { return opaque_data; }
 
@@ -411,7 +411,7 @@ public:
     Buffer* get_frame_payload_stream() override;
 
 private:
-    void parse_frame_payload(const char* buff, const int len) override;
+    bool parse_frame_payload(const char* buff, const int len) override;
 
     uint64_t opaque_data = 0;
 };
@@ -449,7 +449,7 @@ public:
     Buffer* get_frame_payload_stream() override;
 
 private:
-    void parse_frame_payload(const char* buff, const int len) override;
+    bool parse_frame_payload(const char* buff, const int len) override;
 
     bool reserved = false;
     uint32_t last_stream_id;
@@ -480,7 +480,7 @@ public:
     Buffer* get_frame_payload_stream() override;
 
 private:
-    void parse_frame_payload(const char* buff, const int len) override;
+    bool parse_frame_payload(const char* buff, const int len) override;
 
     bool reserved = false;
     uint32_t window_size_increment;
@@ -511,7 +511,7 @@ public:
     Buffer* get_frame_payload_stream() override;
 
 private:
-    void parse_frame_payload(const char* buff, const int len) override;
+    bool parse_frame_payload(const char* buff, const int len) override;
 
     Buffer header_block_fragment;
 };

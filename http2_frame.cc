@@ -5,7 +5,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
-#include <errno.h>
 
 #include "http2_frame.h"
 
@@ -26,7 +25,7 @@ http2_data_frame::http2_data_frame(Buffer& d, int p_len) {
     }
 }
 
-void http2_data_frame::parse_frame_payload(const char* buff, const int len) {
+bool http2_data_frame::parse_frame_payload(const char* buff, const int len) {
     int idx = 0;
 
     if(has_padded_flag()) {
@@ -35,6 +34,8 @@ void http2_data_frame::parse_frame_payload(const char* buff, const int len) {
     }
 
     data.copy_buffer(buff + idx, len - pad_length - idx, 0);
+
+    return true;
 }
 
 void http2_data_frame::set_data(Buffer& d) {
@@ -62,7 +63,7 @@ http2_headers_frame::http2_headers_frame() {
     type = HTTP2_HEADERS_FRAME;
 }
 
-void http2_headers_frame::parse_frame_payload(const char* buff, const int len) {
+bool http2_headers_frame::parse_frame_payload(const char* buff, const int len) {
     int idx = 0;
 
     if(has_padded_flag()) {
@@ -78,6 +79,8 @@ void http2_headers_frame::parse_frame_payload(const char* buff, const int len) {
     }
     
     header.copy_buffer(buff + idx, len - pad_length - idx, 0);
+
+    return true;
 }
 
 Buffer* http2_headers_frame::get_frame_payload_stream() {
@@ -111,10 +114,12 @@ http2_priority_frame::http2_priority_frame() {
     length = 5;
 }
 
-void http2_priority_frame::parse_frame_payload(const char* buff, const int len) {
+bool http2_priority_frame::parse_frame_payload(const char* buff, const int len) {
     exclusive = GET_1BIT(buff, 0x01);
     stream_dependency = GET_4B_INT(buff, 0x7FFFFFFF);
     weight = GET_1B_INT(buff + 4, 0xFF);
+
+    return true;
 }
 
 Buffer* http2_priority_frame::get_frame_payload_stream() {
@@ -137,8 +142,10 @@ http2_rst_stream_frame::http2_rst_stream_frame() {
     length = 4;
 }
 
-void http2_rst_stream_frame::parse_frame_payload(const char* buff, const int len) {
+bool http2_rst_stream_frame::parse_frame_payload(const char* buff, const int len) {
     error_code = GET_4B_INT(buff, 0xFFFFFFFF);
+
+    return true;
 }
 
 Buffer* http2_rst_stream_frame::get_frame_payload_stream() {
@@ -157,7 +164,7 @@ http2_settings_frame::http2_settings_frame() {
 }
 
 http2_settings_frame::http2_settings_frame(http2_settings set) {
-    type = HTTP2_SETTINGS_FRAME;
+    http2_settings_frame();
     set_settings(set);
 }
 
@@ -176,7 +183,7 @@ void http2_settings_frame::set_settings(http2_settings set) {
     length = set_cnt * 6;
 }
 
-void http2_settings_frame::parse_frame_payload(const char* buff, const int len) {
+bool http2_settings_frame::parse_frame_payload(const char* buff, const int len) {
     if(len % 6 != 0) throw std::invalid_argument("Invalid settings buffer");
 
     int i, set_cnt = len / 6;
@@ -199,6 +206,8 @@ void http2_settings_frame::parse_frame_payload(const char* buff, const int len) 
     }
 
     set_settings(set);
+
+    return true;
 }
 
 Buffer* http2_settings_frame::get_frame_payload_stream() {
@@ -269,7 +278,7 @@ http2_push_promise_frame::http2_push_promise_frame() {
     length = 4;
 }
 
-void http2_push_promise_frame::parse_frame_payload(const char* buff, const int len) {
+bool http2_push_promise_frame::parse_frame_payload(const char* buff, const int len) {
     int idx = 0;
 
     if(has_padded_flag()) {
@@ -281,6 +290,8 @@ void http2_push_promise_frame::parse_frame_payload(const char* buff, const int l
     promised_stream_id = GET_4B_INT(buff + idx, 0x7FFFFFFF);
     
     header_block_fragment.copy_buffer(buff + idx + 4, len - pad_length - idx, 0);
+
+    return true;
 }
 
 Buffer* http2_push_promise_frame::get_frame_payload_stream() {
@@ -310,8 +321,10 @@ http2_ping_frame::http2_ping_frame() {
     length = 8;
 }
 
-void http2_ping_frame::parse_frame_payload(const char* buff, const int len) {
+bool http2_ping_frame::parse_frame_payload(const char* buff, const int len) {
     opaque_data = GET_8B_INT(buff, 0xFFFFFFFFFFFFFFFF);
+
+    return true;
 }
 
 Buffer* http2_ping_frame::get_frame_payload_stream() {
@@ -330,12 +343,14 @@ http2_goaway_frame::http2_goaway_frame() {
     length = 8;
 }
 
-void http2_goaway_frame::parse_frame_payload(const char* buff, const int len) {
+bool http2_goaway_frame::parse_frame_payload(const char* buff, const int len) {
     reserved = GET_1BIT(buff, 0x01);
     last_stream_id = GET_4B_INT(buff, 0x7FFFFFFF);
     error_code = GET_4B_INT(buff + 4, 0xFFFFFFFF);
 
     additional_opaque_data.copy_buffer(buff + 8, len - 8, 0);
+
+    return true;
 }
 
 Buffer* http2_goaway_frame::get_frame_payload_stream() {
@@ -361,15 +376,16 @@ http2_window_update_frame::http2_window_update_frame() {
     length = 4;
 }
 
-void http2_window_update_frame::parse_frame_payload(const char* buff, const int len) {
-    reserved = GET_1BIT(buff, 0x01);
-    window_size_increment = GET_4B_INT(buff, 0x7FFFFFFF);
+http2_window_update_frame::http2_window_update_frame(int size) {
+    http2_window_update_frame();
+    window_size_increment = (uint32_t)size;
 }
 
-http2_window_update_frame::http2_window_update_frame(int size) {
-    window_size_increment = (uint32_t)size;
-    length = 4;
-    type = HTTP2_WINDOW_UPDATE_FRAME;
+bool http2_window_update_frame::parse_frame_payload(const char* buff, const int len) {
+    reserved = GET_1BIT(buff, 0x01);
+    window_size_increment = GET_4B_INT(buff, 0x7FFFFFFF);
+
+    return true;
 }
 
 Buffer* http2_window_update_frame::get_frame_payload_stream() {
@@ -390,13 +406,18 @@ http2_continuation_frame::http2_continuation_frame() {
     type = HTTP2_CONTINUATION_FRAME;
 }
 
-void http2_continuation_frame::parse_frame_payload(const char* buff, const int len) {
+bool http2_continuation_frame::parse_frame_payload(const char* buff, const int len) {
     header_block_fragment.copy_buffer(buff, len, 0);
+
+    return true;
 }
 
 Buffer* http2_continuation_frame::get_frame_payload_stream() {
     Buffer *stream = new Buffer(header_block_fragment);
     return stream;
+}
+
+http2_frame::~http2_frame() {
 }
 
 Buffer* http2_frame::get_frame_stream() {
@@ -426,21 +447,6 @@ int http2_frame::send_frame(const int fd) {
     return len;
 }
 
-void http2_frame::parse_frame_header(const char* buff, int len) {
-    int i, idx = 0;
-
-    if(buff == nullptr) throw std::invalid_argument("Null Pointer buffer");
-    if(len != 9) throw std::invalid_argument("Invalid frame buffer");
-
-    length = GET_3B_INT(buff + idx, 0x00FFFFFF);
-    type = (HTTP2_FRAME_TYPE)GET_1B_INT(buff + idx + 3, 0xFF);
-    flags = GET_1B_INT(buff + idx + 4, 0xFF);
-    reserved = GET_1BIT(buff + idx + 5, 0x01);
-    stream_id = GET_4B_INT(buff + idx + 5, 0x7FFFFFFF);
-
-    if(type > 0x09) throw std::invalid_argument("Invalid frame type");
-}
-
 void http2_send_preface(int fd) {
     ::send(fd, preface, PREFACE_LEN, 0);
 }
@@ -465,7 +471,13 @@ bool http2_check_preface(int fd) {
     return http2_check_preface(buffer, read_len);
 }
 
+#include <iostream>
+
 http2_frame* http2_recv_frame(int fd) {
+    if(fd < 0) {
+        return nullptr;
+    }
+
     http2_frame *frame;
     char header_buff[9];
     int length, flags, reserved, stream_id;
