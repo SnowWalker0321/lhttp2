@@ -498,8 +498,6 @@ bool http2_check_preface(int fd) {
     return http2_check_preface(buffer, read_len);
 }
 
-#include <iostream>
-
 http2_frame* http2_recv_frame(int fd) {
     if(fd < 0) {
         return nullptr;
