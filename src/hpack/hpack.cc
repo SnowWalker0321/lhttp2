@@ -77,24 +77,24 @@ static const uint8_t prefix_max[] = {0, 1, 3, 7, 15, 31, 63, 127, 255};
 
 static void EncodeInteger(Buffer& buff, uint32_t i, uint8_t prefix_length, uint8_t prefix_dummy) {
     if(prefix_length <= 0 || prefix_length > 8) {
-        buff.clear();
+        buff.Clear();
         return;
     }
 
     if(i < prefix_max[prefix_length]) {
-        buff.resize(1);
-        buff.set((prefix_dummy & ~prefix_max[prefix_length]) | i, 0);
+        buff.Resize(1);
+        buff.Set((prefix_dummy & ~prefix_max[prefix_length]) | i, 0);
     }
     else {
         int idx = 1;
-        buff.resize(2 + (i - prefix_max[prefix_length]) / 128);
-        buff.set((prefix_dummy & ~prefix_max[prefix_length]) | prefix_max[prefix_length], 0);
+        buff.Resize(2 + (i - prefix_max[prefix_length]) / 128);
+        buff.Set((prefix_dummy & ~prefix_max[prefix_length]) | prefix_max[prefix_length], 0);
         i = i - prefix_max[prefix_length];
         while(i >= 128) {
-            buff.set(i % 128 + 128, idx++);
+            buff.Set(i % 128 + 128, idx++);
             i = i / 128;
         }
-        buff.set(i, idx);
+        buff.Set(i, idx);
     }
 }
 
@@ -103,7 +103,7 @@ static uint32_t DecodeInteger(const Buffer& buff, uint32_t& offset, uint8_t pref
         return 0;
     }
 
-    uint32_t i = buff.get(offset++) & prefix_max[prefix_length];
+    uint32_t i = buff.Get(offset++) & prefix_max[prefix_length];
 
     if(i >= prefix_max[prefix_length]) {
         uint32_t p = 1;
@@ -111,9 +111,9 @@ static uint32_t DecodeInteger(const Buffer& buff, uint32_t& offset, uint8_t pref
             if(offset >= buff.Length()) {
                 return 0;
             }
-            i = i + (buff.get(offset & 127)) * p;
+            i = i + (buff.Get(offset & 127)) * p;
             p = p * 128;
-        } while((buff.get(offset++) & 128) == 128);
+        } while((buff.Get(offset++) & 128) == 128);
     }
 
     return i;
@@ -161,7 +161,7 @@ bool Table::Encode(Buffer& encoded_buffer, std::vector<HeaderFieldRepresentation
         update_table = temp_table;
     }
 
-    encoded_buffer.clear();
+    encoded_buffer.Clear();
 
     for(; it != header_list.end(); it++) {
         if(it->Type() == HeaderField::INDEXED_HEADER_FIELD) {
@@ -172,28 +172,28 @@ bool Table::Encode(Buffer& encoded_buffer, std::vector<HeaderFieldRepresentation
                 continue;
             }
             EncodeInteger(encode_int, idx, 7, 0x80);
-            encoded_buffer.append(encode_int);
+            encoded_buffer.Append(encode_int);
         }
         else {
             idx = Find(it->Field().Name(), "");
             if(idx == 0) {
                 if(it->Type() == HeaderField::LITERAL_HEADER_FIELD_WITH_INCREMENTAL_INDEXING)
-                    encoded_buffer.append(0x40);
+                    encoded_buffer.Append(0x40);
                 else if(it->Type() == HeaderField::LITERAL_HEADER_FIELD_WITHOUT_INDEXING)
-                    encoded_buffer.append(0x00);
+                    encoded_buffer.Append(0x00);
                 else if(it->Type() == HeaderField::LITERAL_HEADER_FIELD_NEVER_INDEXED)
-                    encoded_buffer.append(0x10);
+                    encoded_buffer.Append(0x10);
                 
                 if(it->Field().NameUseHuffman() == true) {
                     Huffman::GetInstance().Encode(huff, it->Field().Name().length());
                     EncodeInteger(encode_int, huff.Length(), 7, 0x80);
-                    encoded_buffer.append(encode_int);
-                    encoded_buffer.append(huff);
+                    encoded_buffer.Append(encode_int);
+                    encoded_buffer.Append(huff);
                 }
                 else {
                     EncodeInteger(encode_int, it->Field().Name().length(), 7, 0);
-                    encoded_buffer.append(encode_int);
-                    encoded_buffer.append(it->Field().Name().c_str());
+                    encoded_buffer.Append(encode_int);
+                    encoded_buffer.Append(it->Field().Name().c_str());
                 }
             } else {
                 if(it->Type() == HeaderField::LITERAL_HEADER_FIELD_WITH_INCREMENTAL_INDEXING)
@@ -202,19 +202,19 @@ bool Table::Encode(Buffer& encoded_buffer, std::vector<HeaderFieldRepresentation
                     EncodeInteger(encode_int, idx, 4, 0x00);
                 else if(it->Type() == HeaderField::LITERAL_HEADER_FIELD_NEVER_INDEXED)
                     EncodeInteger(encode_int, idx, 4, 0x10);
-                encoded_buffer.append(encode_int);
+                encoded_buffer.Append(encode_int);
             }
 
             if(it->Field().ValueUseHuffman() == true) {
                 Huffman::GetInstance().Encode(huff, it->Field().Value().length());
                 EncodeInteger(encode_int, huff.Length(), 7, 0x80);
-                encoded_buffer.append(encode_int);
-                encoded_buffer.append(huff);
+                encoded_buffer.Append(encode_int);
+                encoded_buffer.Append(huff);
             }
             else {
                 EncodeInteger(encode_int, it->Field().Value().length(), 7, 0);
-                encoded_buffer.append(encode_int);
-                encoded_buffer.append(it->Field().Value().c_str());
+                encoded_buffer.Append(encode_int);
+                encoded_buffer.Append(it->Field().Value().c_str());
             }
         }
     }
@@ -231,7 +231,7 @@ bool Table::Decode(std::vector<HeaderFieldRepresentation>& header_list, const Bu
     HeaderFieldRepresentation header;
 
     while(offset < buff.Length()) {
-        first = buff.get(offset);
+        first = buff.Get(offset);
 
         // Indexed Header Field
         if((first & 0x80) == 0x80) {
@@ -289,26 +289,26 @@ bool Table::Decode(std::vector<HeaderFieldRepresentation>& header_list, const Bu
                 }
             }
             else {
-                header.Field().SetNameUseHuffman((buff.get(offset) & 128) == 128);
+                header.Field().SetNameUseHuffman((buff.Get(offset) & 128) == 128);
                 name_len = DecodeInteger(buff, offset, 7);
                 if(header.Field().NameUseHuffman() == true) {
-                    if(Huffman::GetInstance().Decode(name, Buffer(buff.address(offset), name_len)) == false) return false;
-                    header.Field().SetName(std::string(name.address(), name.Length()));
+                    if(Huffman::GetInstance().Decode(name, Buffer(buff.Address(offset), name_len)) == false) return false;
+                    header.Field().SetName(std::string(name.Address(), name.Length()));
                 }
                 else {
-                    header.Field().SetName(std::string(buff.address(offset), name_len));
+                    header.Field().SetName(std::string(buff.Address(offset), name_len));
                 }
                 offset = offset + name_len;
             }
 
-            header.Field().SetValueUseHuffman((buff.get(offset) & 128) == 128);
+            header.Field().SetValueUseHuffman((buff.Get(offset) & 128) == 128);
             value_len = DecodeInteger(buff, offset, 7);
             if(header.Field().ValueUseHuffman() == true) {
-                if(Huffman::GetInstance().Decode(value, Buffer(buff.address(offset), value_len)) == false) return false;
-                header.Field().SetValue(std::string(value.address(), value.Length()));
+                if(Huffman::GetInstance().Decode(value, Buffer(buff.Address(offset), value_len)) == false) return false;
+                header.Field().SetValue(std::string(value.Address(), value.Length()));
             }
             else {
-                header.Field().SetValue(std::string(buff.address(offset), value_len));
+                header.Field().SetValue(std::string(buff.Address(offset), value_len));
             }
             offset = offset + value_len;
         }

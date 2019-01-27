@@ -117,16 +117,16 @@ bool Huffman::Encode(Buffer& target, const Buffer& string) {
     int i, append_remain = 8, cur_remain;
     char cur_ch, append_ch = 0xFF;
 
-    target.clear();
+    target.Clear();
 
     for(i = 0; i < string.Length(); i++) {
-        cur_ch = string.get(i);
+        cur_ch = string.Get(i);
         cur_remain = huffman_codes[cur_ch].code_len;
         while(cur_remain > 0) {
             if(cur_remain >= append_remain) {
                 append_ch = append_ch & (cur_ch >> (cur_remain - append_remain));
                 cur_remain = cur_remain - append_remain;
-                target.append(append_ch);
+                target.Append(append_ch);
                 append_remain = 8;
                 append_ch = 0xFF;
             }
@@ -146,12 +146,12 @@ bool Huffman::Decode(Buffer& target, const Buffer& code) {
     uint8_t mask;
     struct node* cur = &root_;
 
-    target.clear();
+    target.Clear();
 
     for(i = 0; i < code.Length(); i++) {
         mask = 0x80;
         while(mask > 0) {
-            if((code.get(i) & mask) == mask) {
+            if((code.Get(i) & mask) == mask) {
                 if(cur->right == nullptr) return false;
                 cur = cur->right;
             }
@@ -162,7 +162,7 @@ bool Huffman::Decode(Buffer& target, const Buffer& code) {
 
             if(cur->value != -1) {
                 if(cur->value == 256) return true;
-                target.append(cur->value);
+                target.Append(cur->value);
                 cur = &root_;
             }
 
