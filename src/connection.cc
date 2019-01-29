@@ -17,7 +17,7 @@ Connection::Connection(int fd, ENDPOINT_TYPE type, lhttp2::Settings settings) : 
     if(type_ == ENDPOINT_CLIENT) {
         SendPreface();
         SettingsFrame settings_frame;
-        settings_frame.SetSettings(settings_);
+        settings_frame.set_settings(settings_);
         Frame::SendFrame(fd, &settings_frame, hpack_table_);
     }
     else if(type_ == ENDPOINT_SERVER) {
@@ -27,24 +27,24 @@ Connection::Connection(int fd, ENDPOINT_TYPE type, lhttp2::Settings settings) : 
         }
 
         Frame* frame = Frame::RecvFrame(fd, hpack_table_);
-        if(frame->Type() != Frame::TYPE_SETTINGS_FRAME) {
+        if(frame->type() != Frame::TYPE_SETTINGS_FRAME) {
             ::close(fd_);
             return;
         }
 
-        settings_ = ((SettingsFrame*)frame)->Settings();
+        settings_ = ((SettingsFrame*)frame)->settings();
         delete frame;
 
         SettingsFrame settings_frame;
-        settings_frame.SetAckFlag();
+        settings_frame.set_ack_flag();
         Frame::SendFrame(fd_, &settings_frame, hpack_table_);
     }
 }
 
 uint32_t Connection::AllocateStream() {
     for(int i = 1; i < streams_.size(); i++) {
-        if(streams_[i].Status() == Stream::HTTP2_STREAM_IDLE) {
-            streams_[i].SetStatus(Stream::HTTP2_STREAM_CLOSED);
+        if(streams_[i].status() == Stream::HTTP2_STREAM_IDLE) {
+            streams_[i].set_status(Stream::HTTP2_STREAM_CLOSED);
         }
     }
     return 0;
@@ -57,7 +57,7 @@ void Connection::SendFrame(uint32_t streamId, Frame* frame) {
 
     Stream& stream = streams_[streamId];
 
-    switch(stream.Status()) {
+    switch(stream.status()) {
         case Stream::HTTP2_STREAM_IDLE : break;
         case Stream::HTTP2_STREAM_RESERVED : break;
         case Stream::HTTP2_STREAM_OPEN : break;
@@ -67,7 +67,7 @@ void Connection::SendFrame(uint32_t streamId, Frame* frame) {
         default : break;
     }
 
-    frame->SetStreamId(streamId);
+    frame->set_stream_id(streamId);
     Frame::SendFrame(fd_, frame, hpack_table_);
 }
 
@@ -89,7 +89,7 @@ Stream::HTTP2_STREAM_STATUS Connection::StreamStatus(int streamId) {
         return Stream::HTTP2_STREAM_RESERVED;
     if(streamId >= streams_.size())
         return Stream::HTTP2_STREAM_IDLE;
-    return streams_[streamId].Status();
+    return streams_[streamId].status();
 }
 
 lhttp2::Settings& Connection::Settings() {
@@ -98,7 +98,7 @@ lhttp2::Settings& Connection::Settings() {
 
 void Connection::SetSettings(lhttp2::Settings settings) {
     settings_ = settings;
-    hpack_table_.UpdateSize(settings_.HeaderTableSize());
+    hpack_table_.UpdateSize(settings_.header_table_size());
 }
 
 void Connection::UseHuffman(bool use) {

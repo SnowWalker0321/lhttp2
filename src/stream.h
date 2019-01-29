@@ -20,8 +20,8 @@ namespace lhttp2 {
         Stream();
         ~Stream();
 
-        const HTTP2_STREAM_STATUS Status() const;
-        void SetStatus(HTTP2_STREAM_STATUS status);
+        const HTTP2_STREAM_STATUS status() const;
+        void set_status(HTTP2_STREAM_STATUS status);
 
     private:
         HTTP2_STREAM_STATUS status_;

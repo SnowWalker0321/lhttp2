@@ -1,7 +1,7 @@
 #ifndef _LHTTP2_BUFFER_H_
 #define _LHTTP2_BUFFER_H_
 
-#include <stdint.h>
+#include <cstdint>
 
 struct Buffer {
 public:
@@ -55,6 +55,38 @@ private:
     char* buffer = nullptr;
     unsigned int len = 0;
     unsigned int max_len = 8;
+};
+
+struct uint24_t {
+public:
+    struct uint24_t& operator=(const uint32_t& value);
+
+private:
+    uint32_t value_ : 24;
+};
+
+struct uint40_t {
+public:
+    struct uint40_t& operator=(const uint64_t& value);
+
+private:
+    uint64_t value_ : 40;
+};
+
+struct uint48_t {
+public:
+    struct uint48_t& operator=(const uint64_t& value);
+
+private:
+    uint64_t value_ : 48;
+};
+
+struct uint52_t {
+public:
+    struct uint52_t& operator=(const uint64_t& value);
+
+private:
+    uint64_t value_ : 52;
 };
 
 #endif

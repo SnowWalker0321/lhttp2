@@ -13,39 +13,39 @@ using namespace lhttp2;
 Frame::~Frame() {
 }
 
-const uint32_t Frame::Length() const {
+const uint32_t Frame::length() const {
     return length_;
 }
 
-const Frame::FRAME_TYPE Frame::Type() const {
+const Frame::FRAME_TYPE Frame::type() const {
     return type_;
 }
 
-const uint8_t Frame::Flags() const {
+const uint8_t Frame::flags() const {
     return flags_;
 }
 
-const uint32_t Frame::StreamId() const {
+const uint32_t Frame::stream_id() const {
     return stream_id_;
 }
 
-const bool Frame::Reserved() const {
+const bool Frame::reserved() const {
     return reserved_;
 }
 
-void Frame::SetFlags(uint8_t flags) {
+void Frame::set_flags(uint8_t flags) {
     flags_ = flags_ | flags;
 }
 
-void Frame::ClearFlags(uint8_t flags) {
+void Frame::clear_flags(uint8_t flags) {
     flags_ = flags_ & ~flags;
 }
 
-bool Frame::HasFlags(uint8_t flags) const {
+bool Frame::has_flags(uint8_t flags) const {
     return ((flags_ & flags) == flags);
 }
 
-void Frame::SetStreamId(uint32_t streamId) {
+void Frame::set_stream_id(uint32_t streamId) {
     stream_id_ = streamId;
 }
 
@@ -186,8 +186,8 @@ DataFrame::DataFrame(Buffer data, uint8_t pad_length) {
     DataFrame();
 
     pad_length_ = pad_length;
-    if(pad_length_ > 0) SetFlags(FLAG_PADDED);
-    else ClearFlags(FLAG_PADDED);
+    if(pad_length_ > 0) set_flags(FLAG_PADDED);
+    else clear_flags(FLAG_PADDED);
 
     data_ = data;
 
@@ -197,53 +197,53 @@ DataFrame::DataFrame(Buffer data, uint8_t pad_length) {
 DataFrame::~DataFrame() {
 }
 
-const uint8_t DataFrame::PadLength() const {
+const uint8_t DataFrame::pad_length() const {
     return pad_length_;
 }
 
-const Buffer& DataFrame::Data() const {
+const Buffer& DataFrame::data() const {
     return data_;
 }
 
-void DataFrame::SetPadLength(uint8_t pad_length) {
+void DataFrame::set_pad_length(uint8_t pad_length) {
     pad_length_ = pad_length;
 }
 
-void DataFrame::SetData(Buffer& data) {
+void DataFrame::set_data(Buffer& data) {
     data_ = data;
     UpdateLength();
 }
 
-bool DataFrame::HasEndStreamFlag() const {
-    return HasFlags(FLAG_END_STREAM);
+bool DataFrame::has_end_stream_flag() const {
+    return has_flags(FLAG_END_STREAM);
 }
 
-bool DataFrame::HasPaddedFlag() const {
-    return HasFlags(FLAG_PADDED);
+bool DataFrame::has_padded_flag() const {
+    return has_flags(FLAG_PADDED);
 }
 
-void DataFrame::SetEndStreamFlag() {
-    SetFlags(FLAG_END_STREAM);
+void DataFrame::set_end_stream_flag() {
+    set_flags(FLAG_END_STREAM);
 }
 
-void DataFrame::SetPaddedFlag() {
-    SetFlags(FLAG_PADDED);
+void DataFrame::set_padded_flag() {
+    set_flags(FLAG_PADDED);
     UpdateLength();
 }
 
-void DataFrame::ClearEndStreamFlag() {
-    ClearFlags(FLAG_END_HEADERS);
+void DataFrame::clear_end_stream_flag() {
+    clear_flags(FLAG_END_HEADERS);
 }
 
-void DataFrame::ClearPaddedFlag() {
-    ClearFlags(FLAG_PADDED);
+void DataFrame::clear_padded_flag() {
+    clear_flags(FLAG_PADDED);
     UpdateLength();
 }
 
 Buffer* DataFrame::EncodeFramePayload(hpack::Table& hpack_table) {
     Buffer *stream = new Buffer(length_);
 
-    if(HasPaddedFlag()) {
+    if(has_padded_flag()) {
         stream->Set(pad_length_, 0);
         stream->Append(data_);
     }
@@ -257,7 +257,7 @@ Buffer* DataFrame::EncodeFramePayload(hpack::Table& hpack_table) {
 bool DataFrame::DecodeFramePayload(const char* buff, const int len, hpack::Table& hpack_table) {
     int idx = 0;
 
-    if(HasPaddedFlag()) {
+    if(has_padded_flag()) {
         pad_length_ = buff[idx];
         idx = idx + 1;
     }
@@ -271,7 +271,7 @@ bool DataFrame::DecodeFramePayload(const char* buff, const int len, hpack::Table
 void DataFrame::UpdateLength() {
     length_ = data_.Length();
 
-    if(HasPaddedFlag())
+    if(has_padded_flag())
         length_ = length_ + pad_length_ + 1;
 }
 
@@ -286,147 +286,147 @@ HeadersFrame::HeadersFrame(std::vector<hpack::HeaderFieldRepresentation> header_
     HeadersFrame();
 
     pad_length_ = pad_length;
-    if(pad_length_ > 0) SetFlags(FLAG_PADDED);
-    else ClearFlags(FLAG_PADDED);
+    if(pad_length_ > 0) set_flags(FLAG_PADDED);
+    else clear_flags(FLAG_PADDED);
 
-    ClearFlags(FLAG_PRIORITY);
+    clear_flags(FLAG_PRIORITY);
 
     header_list_ = header_list;
-    UpdateHeaderBlockFragment(hpack_table);
+    update_header_block_fragment(hpack_table);
 }
 
 HeadersFrame::HeadersFrame(std::vector<hpack::HeaderFieldRepresentation> header_list, hpack::Table& hpack_table, bool exclusive, uint32_t stream_dependency, uint8_t weight, uint8_t pad_length) {
     HeadersFrame();
 
     pad_length_ = pad_length;
-    if(pad_length_ > 0) SetFlags(FLAG_PADDED);
-    else ClearFlags(FLAG_PADDED);
+    if(pad_length_ > 0) set_flags(FLAG_PADDED);
+    else clear_flags(FLAG_PADDED);
 
-    SetFlags(FLAG_PRIORITY);
+    set_flags(FLAG_PRIORITY);
     exclusive_ = exclusive;
     stream_dependency_ = stream_dependency;
     weight_ = weight;
 
     header_list_ = header_list;
-    UpdateHeaderBlockFragment(hpack_table);
+    update_header_block_fragment(hpack_table);
 }
 
 HeadersFrame::~HeadersFrame() {
 }
 
-const uint8_t HeadersFrame::PadLength() const {
+const uint8_t HeadersFrame::pad_length() const {
     return pad_length_;
 }
 
-const bool HeadersFrame::Exclusive() const { 
+const bool HeadersFrame::exclusive() const { 
     return exclusive_;
 }
 
-const uint32_t HeadersFrame::StreamDependency() const {
+const uint32_t HeadersFrame::stream_dependency() const {
     return stream_dependency_;
 }
 
-const uint8_t HeadersFrame::Weight() const {
+const uint8_t HeadersFrame::weight() const {
     return weight_;
 }
 
-const std::vector<hpack::HeaderFieldRepresentation>& HeadersFrame::HeaderList() const {
+const std::vector<hpack::HeaderFieldRepresentation>& HeadersFrame::header_list() const {
     return header_list_;
 }
 
-const Buffer& HeadersFrame::HeaderBlockFragment() const {
+const Buffer& HeadersFrame::header_block_fragment() const {
     return header_;
 }
 
-void HeadersFrame::SetPadLength(uint8_t padLength) {
-    pad_length_ = padLength;
+void HeadersFrame::set_pad_length(uint8_t pad_length) {
+    pad_length_ = pad_length;
 }
 
-void HeadersFrame::SetExclusive(bool exclusive) {
+void HeadersFrame::set_exclusive(bool exclusive) {
     exclusive_ = exclusive;
 }
 
-void HeadersFrame::SetStreamDependency(uint32_t streamDependency) {
-    stream_dependency_ = streamDependency;
+void HeadersFrame::set_stream_dependency(uint32_t stream_dependency) {
+    stream_dependency_ = stream_dependency;
 }
 
-void HeadersFrame::SetWeight(uint8_t weight) {
+void HeadersFrame::set_weight(uint8_t weight) {
     weight_ = weight;
 }
 
-void HeadersFrame::SetHeaderList(std::vector<hpack::HeaderFieldRepresentation> headerList, hpack::Table& hpack_table) {
+void HeadersFrame::set_header_list(std::vector<hpack::HeaderFieldRepresentation> headerList, hpack::Table& hpack_table) {
     header_list_ = headerList;
-    UpdateHeaderBlockFragment(hpack_table);
+    update_header_block_fragment(hpack_table);
 }
 
-void HeadersFrame::UpdateHeaderBlockFragment(hpack::Table& hpack_table) {
+void HeadersFrame::update_header_block_fragment(hpack::Table& hpack_table) {
     hpack_table.Encode(header_, header_list_, false);
     UpdateLength();
 }
 
-bool HeadersFrame::HasEndStreamFlag() const {
-    return HasFlags(FLAG_END_STREAM);
+bool HeadersFrame::has_end_stream_flag() const {
+    return has_flags(FLAG_END_STREAM);
 }
 
-bool HeadersFrame::HasEndHeadersFlag() const {
-    return HasFlags(FLAG_END_HEADERS);
+bool HeadersFrame::has_end_headers_flag() const {
+    return has_flags(FLAG_END_HEADERS);
 }
 
-bool HeadersFrame::HasPaddedFlag() const {
-    return HasFlags(FLAG_PADDED);
+bool HeadersFrame::has_padded_flag() const {
+    return has_flags(FLAG_PADDED);
 }
 
-bool HeadersFrame::HasPriorityFlag() const {
-    return HasFlags(FLAG_PRIORITY);
+bool HeadersFrame::has_priority_flag() const {
+    return has_flags(FLAG_PRIORITY);
 }
 
-void HeadersFrame::SetEndStreamFlag() {
-    SetFlags(FLAG_END_STREAM);
+void HeadersFrame::set_end_stream_flag() {
+    set_flags(FLAG_END_STREAM);
 }
 
-void HeadersFrame::SetEndHeadersFlag() {
-    SetFlags(FLAG_END_HEADERS);
+void HeadersFrame::set_end_headers_flag() {
+    set_flags(FLAG_END_HEADERS);
 }
 
-void HeadersFrame::SetPaddedFlag() {
-    SetFlags(FLAG_PADDED);
+void HeadersFrame::set_padded_flag() {
+    set_flags(FLAG_PADDED);
     UpdateLength();
 }
 
-void HeadersFrame::SetPriorityFlag() {
-    SetFlags(FLAG_PRIORITY);
+void HeadersFrame::set_priority_flag() {
+    set_flags(FLAG_PRIORITY);
     UpdateLength();
 }
 
-void HeadersFrame::ClearEndStreamFlag() {
-    ClearFlags(FLAG_END_STREAM);
+void HeadersFrame::clear_end_stream_flag() {
+    clear_flags(FLAG_END_STREAM);
 }
 
-void HeadersFrame::ClearEndHeadersFlag() {
-    ClearFlags(FLAG_END_HEADERS);
+void HeadersFrame::clear_end_headers_flag() {
+    clear_flags(FLAG_END_HEADERS);
 }
 
-void HeadersFrame::ClearPaddedFlag() {
-    ClearFlags(FLAG_PADDED);
+void HeadersFrame::clear_padded_flag() {
+    clear_flags(FLAG_PADDED);
     UpdateLength();
 }
 
-void HeadersFrame::ClearPriorityFlag() {
-    ClearFlags(FLAG_PRIORITY);
+void HeadersFrame::clear_priority_flag() {
+    clear_flags(FLAG_PRIORITY);
     UpdateLength();
 }
 
 Buffer* HeadersFrame::EncodeFramePayload(hpack::Table& hpack_table) {
-    UpdateHeaderBlockFragment(hpack_table);
+    update_header_block_fragment(hpack_table);
     int idx = 0;
     Buffer *stream = new Buffer(length_);
 
-    if(HasPaddedFlag()) {
+    if(has_padded_flag()) {
         stream->Set(pad_length_, idx);
         idx = idx + 1;
     }
 
-    if(HasPriorityFlag()) {
+    if(has_priority_flag()) {
         stream->SetValue((exclusive_ << 7) | (stream_dependency_ & 0x7FFFFFFF), 4, idx);
         stream->Set(weight_, idx + 4);
         idx = idx + 5;
@@ -440,12 +440,12 @@ Buffer* HeadersFrame::EncodeFramePayload(hpack::Table& hpack_table) {
 bool HeadersFrame::DecodeFramePayload(const char* buff, const int len, hpack::Table& hpack_table) {
     int idx = 0;
 
-    if(HasPaddedFlag()) {
+    if(has_padded_flag()) {
         pad_length_ = buff[idx];
         idx = idx + 1;
     }
 
-    if(HasPriorityFlag()) {
+    if(has_priority_flag()) {
         exclusive_ = ((buff[idx] & 0x80) == 0x80);
         stream_dependency_ = (uint32_t)(buff[idx] & 0x7F) << 24 | \
                             (uint32_t)buff[idx + 1] << 16 | \
@@ -468,10 +468,10 @@ bool HeadersFrame::DecodeFramePayload(const char* buff, const int len, hpack::Ta
 void HeadersFrame::UpdateLength() {
     length_ = header_.Length();
 
-    if(HasPaddedFlag())
+    if(has_padded_flag())
         length_ = length_ + pad_length_ + 1;
 
-    if(HasPriorityFlag())
+    if(has_priority_flag())
         length_ = length_ + 5;
 }
 
@@ -493,27 +493,27 @@ PriorityFrame::PriorityFrame(bool exclusive, uint32_t stream_dependency, uint8_t
 PriorityFrame::~PriorityFrame() {
 }
 
-const bool PriorityFrame::Exclusive() const {
+const bool PriorityFrame::exclusive() const {
     return exclusive_;
 }
 
-const uint32_t PriorityFrame::StreamDependency() const {
+const uint32_t PriorityFrame::stream_dependency() const {
     return stream_dependency_;
 }
 
-const uint8_t PriorityFrame::Weight() const {
+const uint8_t PriorityFrame::weight() const {
     return weight_;
 }
 
-void PriorityFrame::SetExclusive(bool exclusive) {
+void PriorityFrame::set_exclusive(bool exclusive) {
     exclusive_ = exclusive;
 }
 
-void PriorityFrame::SetStreamDependency(uint32_t stream_dependency) {
+void PriorityFrame::set_stream_dependency(uint32_t stream_dependency) {
     stream_dependency_ = stream_dependency;
 }
 
-void PriorityFrame::SetWeight(uint8_t weight) {
+void PriorityFrame::set_weight(uint8_t weight) {
     weight_ = weight;
 }
 
@@ -561,11 +561,11 @@ RSTStreamFrame::RSTStreamFrame(uint32_t error_code) {
 RSTStreamFrame::~RSTStreamFrame() {
 }
 
-const uint32_t RSTStreamFrame::ErrorCode() const {
+const uint32_t RSTStreamFrame::error_code() const {
     return error_code_;
 }
 
-void RSTStreamFrame::SetErrorCode(uint32_t error_code) {
+void RSTStreamFrame::set_error_code(uint32_t error_code) {
     error_code_ = error_code;
 }
 
@@ -610,70 +610,70 @@ SettingsFrame::SettingsFrame(lhttp2::Settings settings) {
 SettingsFrame::~SettingsFrame() {
 }
 
-const lhttp2::Settings& SettingsFrame::Settings() const {
+const lhttp2::Settings& SettingsFrame::settings() const {
     return settings_;
 }
 
-void SettingsFrame::SetSettings(lhttp2::Settings& settings) {
+void SettingsFrame::set_settings(lhttp2::Settings& settings) {
     settings_ = settings;
     UpdateLength();
 }
 
-bool SettingsFrame::HasAckFlag() {
-    return HasFlags(FLAG_ACK);
+bool SettingsFrame::has_ack_flag() {
+    return has_flags(FLAG_ACK);
 }
 
-void SettingsFrame::SetAckFlag() {
-    SetFlags(FLAG_ACK);
+void SettingsFrame::set_ack_flag() {
+    set_flags(FLAG_ACK);
     UpdateLength();
 }
 
-void SettingsFrame::ClearAckFlag() {
-    ClearFlags(FLAG_ACK);
+void SettingsFrame::clear_ack_flag() {
+    clear_flags(FLAG_ACK);
     UpdateLength();
 }
 
 Buffer* SettingsFrame::EncodeFramePayload(hpack::Table& hpack_table) {
-    if(HasAckFlag() == true || length_ == 0) {
+    if(has_ack_flag() == true || length_ == 0) {
         return new Buffer((unsigned int)0);
     }
 
     int idx = 0;
     Buffer *stream = new Buffer(length_);
 
-    if(settings_.HeaderTableSize() != 0x1000) {
+    if(settings_.header_table_size() != 0x1000) {
         stream->SetValue(0x0001, 2, idx);
-        stream->SetValue(settings_.HeaderTableSize(), 4, idx + 2);
+        stream->SetValue(settings_.header_table_size(), 4, idx + 2);
         idx = idx + 6;
     }
 
-    if(settings_.EnablePush() != true) {
+    if(settings_.enable_push() != true) {
         stream->SetValue(0x0002, 2, idx);
-        stream->SetValue(settings_.EnablePush(), 4, idx + 2);
+        stream->SetValue(settings_.enable_push(), 4, idx + 2);
         idx = idx + 6;
     }
 
-    if(settings_.MaxConcurrentStream() != UINT32_MAX) {
+    if(settings_.max_concurrent_stream() != UINT32_MAX) {
         stream->SetValue(0x0003, 2, idx);
-        stream->SetValue(settings_.MaxConcurrentStream(), 4, idx + 2);
+        stream->SetValue(settings_.max_concurrent_stream(), 4, idx + 2);
         idx = idx + 6;
     }
 
-    if(settings_.InitialWindowSize() != 0xFFFF) {
+    if(settings_.initial_window_size() != 0xFFFF) {
         stream->SetValue(0x0004, 2, idx);
-        stream->SetValue(settings_.InitialWindowSize(), 4, idx + 2);
+        stream->SetValue(settings_.initial_window_size(), 4, idx + 2);
         idx = idx + 6;
     }
 
-    if(settings_.MaxFrameSize() != 0x4000) {
+    if(settings_.max_frame_size() != 0x4000) {
         stream->SetValue(0x0005, 2, idx);
-        stream->SetValue(settings_.MaxFrameSize(), 4, idx + 2);
+        stream->SetValue(settings_.max_frame_size(), 4, idx + 2);
         idx = idx + 6;
     }
 
-    if(settings_.MaxHeaderListSize() != UINT32_MAX) {
+    if(settings_.max_header_list_size() != UINT32_MAX) {
         stream->SetValue(0x0006, 2, idx);
-        stream->SetValue(settings_.MaxHeaderListSize(), 4, idx + 2);
+        stream->SetValue(settings_.max_header_list_size(), 4, idx + 2);
         idx = idx + 6;
     }
     
@@ -696,16 +696,16 @@ bool SettingsFrame::DecodeFramePayload(const char* buff, const int len, hpack::T
               (uint32_t)buff[i * 6 + 4] << 8 | \
               (uint32_t)buff[i * 6 + 5];
 
-        if(id == SETTINGS_HEADER_TABLE_SIZE) settings.SetHeaderTableSize(val);
-        else if(id == SETTINGS_ENABLE_PUSH) settings.SetEnablePush(val);
-        else if(id == SETTINGS_MAX_CONCURRENT_STREAMS) settings.SetMaxConcurrentStream(val);
-        else if(id == SETTINGS_INITIAL_WINDOW_SIZE) settings.SetInitialWindowSize(val);
+        if(id == SETTINGS_HEADER_TABLE_SIZE) settings.set_header_table_size(val);
+        else if(id == SETTINGS_ENABLE_PUSH) settings.set_enable_push(val);
+        else if(id == SETTINGS_MAX_CONCURRENT_STREAMS) settings.set_max_concurrent_stream(val);
+        else if(id == SETTINGS_INITIAL_WINDOW_SIZE) settings.set_initial_window_size(val);
         else if(id == SETTINGS_MAX_FRAME_SIZE) {
             if(val < 0x4000) val = 0x4000;
             if(val > 0xFFFFFF) val = 0xFFFFFF;
-            settings.SetMaxFrameSize(val);
+            settings.set_max_frame_size(val);
         }
-        else if(id == SETTINGS_MAX_HEADER_LIST_SIZE) settings.SetMaxHeaderListSize(val);
+        else if(id == SETTINGS_MAX_HEADER_LIST_SIZE) settings.set_max_header_list_size(val);
     }
 
     settings_ = settings;
@@ -715,19 +715,19 @@ bool SettingsFrame::DecodeFramePayload(const char* buff, const int len, hpack::T
 }
 
 void SettingsFrame::UpdateLength() {
-    if(HasAckFlag()) {
+    if(has_ack_flag()) {
         length_ = 0;
         return;
     }
 
     int setCount = 0;
 
-    if(settings_.HeaderTableSize() != 0x1000) setCount++;
-    if(settings_.EnablePush() != true) setCount++;
-    if(settings_.MaxConcurrentStream() != UINT32_MAX) setCount++;
-    if(settings_.InitialWindowSize() != 0xFFFF) setCount++;
-    if(settings_.MaxFrameSize() != 0x4000) setCount++;
-    if(settings_.MaxHeaderListSize() != UINT32_MAX) setCount++;
+    if(settings_.header_table_size() != 0x1000) setCount++;
+    if(settings_.enable_push() != true) setCount++;
+    if(settings_.max_concurrent_stream() != UINT32_MAX) setCount++;
+    if(settings_.initial_window_size() != 0xFFFF) setCount++;
+    if(settings_.max_frame_size() != 0x4000) setCount++;
+    if(settings_.max_header_list_size() != UINT32_MAX) setCount++;
 
     length_ = setCount * 6;
 }
@@ -747,8 +747,8 @@ PushPromisFrame::PushPromisFrame(uint32_t promised_stream_id, Buffer header_bloc
     header_block_fragment_ = header_block_fragment;
 
     pad_length_ = pad_length;
-    if(pad_length_ > 0) SetFlags(FLAG_PADDED);
-    else ClearFlags(FLAG_PADDED);
+    if(pad_length_ > 0) set_flags(FLAG_PADDED);
+    else clear_flags(FLAG_PADDED);
 
     UpdateLength();
 }
@@ -756,62 +756,62 @@ PushPromisFrame::PushPromisFrame(uint32_t promised_stream_id, Buffer header_bloc
 PushPromisFrame::~PushPromisFrame() {
 }
 
-const uint8_t PushPromisFrame::PadLength() const {
+const uint8_t PushPromisFrame::pad_length() const {
     return pad_length_;
 }
 
-const bool PushPromisFrame::Reserved() const {
+const bool PushPromisFrame::reserved() const {
     return reserved_;
 }
 
-const uint32_t PushPromisFrame::PromisedStreamId() const {
+const uint32_t PushPromisFrame::promised_stream_id() const {
     return promised_stream_id_;
 }
 
-const Buffer& PushPromisFrame::HeaderBlockFragment() const {
+const Buffer& PushPromisFrame::header_block_fragment() const {
     return header_block_fragment_;
 }
 
-void PushPromisFrame::SetPadLength(uint8_t pad_length) {
+void PushPromisFrame::set_pad_length(uint8_t pad_length) {
     pad_length_ = pad_length;
 }
 
-void PushPromisFrame::SetReserved(bool reserved) {
+void PushPromisFrame::set_reserved(bool reserved) {
     reserved_ = reserved;
 }
 
-void PushPromisFrame::SetPromisedStreamId(uint32_t promised_stream_id) {
+void PushPromisFrame::set_promised_stream_id(uint32_t promised_stream_id) {
     promised_stream_id_ = promised_stream_id;
 }
 
-void PushPromisFrame::SetHeaderBlockFragment(Buffer& header_block_fragment) {
+void PushPromisFrame::set_header_block_fragment(Buffer& header_block_fragment) {
     header_block_fragment_ = header_block_fragment;
     UpdateLength();
 }
 
-bool PushPromisFrame::HasEndHeadersFlag() {
-    return HasFlags(FLAG_END_HEADERS);
+bool PushPromisFrame::has_end_headers_flag() {
+    return has_flags(FLAG_END_HEADERS);
 }
 
-bool PushPromisFrame::HasPaddedFlag() {
-    return HasFlags(FLAG_PADDED);
+bool PushPromisFrame::has_padded_flag() {
+    return has_flags(FLAG_PADDED);
 }
 
-void PushPromisFrame::SetEndHeadersFlag() {
-    SetFlags(FLAG_END_HEADERS);
+void PushPromisFrame::set_end_headers_flag() {
+    set_flags(FLAG_END_HEADERS);
 }
 
-void PushPromisFrame::SetPaddedFlag() {
-    SetFlags(FLAG_PADDED);
+void PushPromisFrame::set_padded_flag() {
+    set_flags(FLAG_PADDED);
     UpdateLength();
 }
 
-void PushPromisFrame::ClearEndHeadersFlag() {
-    ClearFlags(FLAG_END_HEADERS);
+void PushPromisFrame::clear_end_headers_flag() {
+    clear_flags(FLAG_END_HEADERS);
 }
 
-void PushPromisFrame::ClearPaddedFlag() {
-    ClearFlags(FLAG_PADDED);
+void PushPromisFrame::clear_padded_flag() {
+    clear_flags(FLAG_PADDED);
     UpdateLength();
 }
 
@@ -819,7 +819,7 @@ Buffer* PushPromisFrame::EncodeFramePayload(hpack::Table& hpack_table) {
     int idx = 0;
     Buffer *stream = new Buffer(pad_length_ + header_block_fragment_.Length());
 
-    if(HasPaddedFlag()) {
+    if(has_padded_flag()) {
         stream->Set(pad_length_, 0);
         idx = 1;
     }
@@ -833,7 +833,7 @@ Buffer* PushPromisFrame::EncodeFramePayload(hpack::Table& hpack_table) {
 bool PushPromisFrame::DecodeFramePayload(const char* buff, const int len, hpack::Table& hpack_table) {
     int idx = 0;
 
-    if(HasPaddedFlag()) {
+    if(has_padded_flag()) {
         pad_length_ = buff[idx];
         idx = idx + 1;
     }
@@ -853,7 +853,7 @@ bool PushPromisFrame::DecodeFramePayload(const char* buff, const int len, hpack:
 void PushPromisFrame::UpdateLength() {
     length_ = 4 + header_block_fragment_.Length();
 
-    if(HasPaddedFlag())
+    if(has_padded_flag())
         length_ = length_ + pad_length_ + 1;
 }
 
@@ -873,24 +873,24 @@ PingFrame::PingFrame(uint64_t opaque_data) {
 PingFrame::~PingFrame() {
 }
 
-const uint64_t PingFrame::OpaqueData() const {
+const uint64_t PingFrame::opaque_data() const {
     return opaque_data_;
 }
 
-void PingFrame::SetOpaqueData(uint64_t opaque_data) {
+void PingFrame::set_opaque_data(uint64_t opaque_data) {
     opaque_data_ = opaque_data;
 }
 
-bool PingFrame::HasAckFlag() {
-    return HasFlags(FLAG_ACK);
+bool PingFrame::has_ack_flag() {
+    return has_flags(FLAG_ACK);
 }
 
-void PingFrame::SetAckFlag() {
-    SetFlags(FLAG_ACK);
+void PingFrame::set_ack_flag() {
+    set_flags(FLAG_ACK);
 }
 
-void PingFrame::ClearAckFlag() {
-    ClearFlags(FLAG_ACK);
+void PingFrame::clear_ack_flag() {
+    clear_flags(FLAG_ACK);
 }
 
 Buffer* PingFrame::EncodeFramePayload(hpack::Table& hpack_table) {
@@ -941,35 +941,35 @@ GoawayFrame::GoawayFrame(uint32_t last_stream_id, uint32_t error_code, Buffer ad
 GoawayFrame::~GoawayFrame() {
 }
 
-const bool GoawayFrame::Reserved() const {
+const bool GoawayFrame::reserved() const {
     return reserved_;
 }
 
-const uint32_t GoawayFrame::LastStreamId() const {
+const uint32_t GoawayFrame::last_stream_id() const {
     return last_stream_id_;
 }
 
-const uint32_t GoawayFrame::ErrorCode() const {
+const uint32_t GoawayFrame::error_code() const {
     return error_code_;
 }
 
-const Buffer& GoawayFrame::AdditionalDebugData() const {
+const Buffer& GoawayFrame::additional_debug_data() const {
     return additional_debug_data_;
 }
 
-void GoawayFrame::SetReserved(bool reserved) {
+void GoawayFrame::set_reserved(bool reserved) {
     reserved_ = reserved;
 }
 
-void GoawayFrame::SetLastStreamId(uint32_t last_stream_id) {
+void GoawayFrame::set_last_stream_id(uint32_t last_stream_id) {
     last_stream_id_ = last_stream_id;
 }
 
-void GoawayFrame::SetErrorCode(uint32_t error_code) {
+void GoawayFrame::set_error_code(uint32_t error_code) {
     error_code_ = error_code;
 }
 
-void GoawayFrame::SetAdditionalDebugData(Buffer& additional_debug_data) {
+void GoawayFrame::set_additional_debug_data(Buffer& additional_debug_data) {
     additional_debug_data_ = additional_debug_data;
     UpdateLength();
 }
@@ -1024,19 +1024,19 @@ WindowUpdateFrame::WindowUpdateFrame(uint32_t window_size_increment) {
 WindowUpdateFrame::~WindowUpdateFrame() {
 }
 
-const bool WindowUpdateFrame::Reserved() const {
+const bool WindowUpdateFrame::reserved() const {
     return reserved_;
 }
 
-const uint32_t WindowUpdateFrame::windowSizeIncrement() const {
+const uint32_t WindowUpdateFrame::window_size_increment() const {
     return window_size_increment_;
 }
 
-void WindowUpdateFrame::SetReserved(bool reserved) {
+void WindowUpdateFrame::set_reserved(bool reserved) {
     reserved_ = reserved;
 }
 
-void WindowUpdateFrame::SetWindowSizeIncrement(int window_size_increment) {
+void WindowUpdateFrame::set_window_size_increment(int window_size_increment) {
     window_size_increment_ = window_size_increment;
 }
 
@@ -1081,25 +1081,25 @@ ContinuationFrame::ContinuationFrame(Buffer& header_block_fragment) {
 ContinuationFrame::~ContinuationFrame() {
 }
 
-const Buffer& ContinuationFrame::HeaderBlockFragment() const {
+const Buffer& ContinuationFrame::header_block_fragment() const {
     return header_block_fragment_;
 }
 
-void ContinuationFrame::SetHeaderBlockFragment(Buffer& header_block_fragment) {
+void ContinuationFrame::set_header_block_fragment(Buffer& header_block_fragment) {
     header_block_fragment_ = header_block_fragment;
     UpdateLength();
 }
 
-bool ContinuationFrame::HasEndHeadersFlag() {
-    return HasFlags(FLAG_END_HEADERS);
+bool ContinuationFrame::has_end_headers_flag() {
+    return has_flags(FLAG_END_HEADERS);
 }
 
-void ContinuationFrame::SetEndHeadersFlag() {
-    SetFlags(FLAG_END_HEADERS);
+void ContinuationFrame::set_end_headers_flag() {
+    set_flags(FLAG_END_HEADERS);
 }
 
-void ContinuationFrame::ClearEndHeadersFlag() {
-    ClearFlags(FLAG_END_HEADERS);
+void ContinuationFrame::clear_end_headers_flag() {
+    clear_flags(FLAG_END_HEADERS);
 }
 
 Buffer* ContinuationFrame::EncodeFramePayload(hpack::Table& hpack_table) {

@@ -200,3 +200,19 @@ void Buffer::PrintBuffer(const char* buff, const int len) {
         }
     }
 }
+
+uint24_t& uint24_t::operator=(const uint32_t& value) {
+    value_ = 0x00FFFFFF & value;
+}
+
+uint40_t& uint40_t::operator=(const uint64_t& value) {
+    value_ = 0x000000FFFFFFFFFF & value;
+}
+
+uint48_t& uint48_t::operator=(const uint64_t& value) {
+    value_ = 0x0000FFFFFFFFFFFF & value;
+}
+
+uint52_t& uint52_t::operator=(const uint64_t& value) {
+    value_ = 0x00FFFFFFFFFFFFFF & value;
+}

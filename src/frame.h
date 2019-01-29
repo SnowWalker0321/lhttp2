@@ -68,17 +68,17 @@ namespace lhttp2 {
 
         virtual ~Frame() = 0;
 
-        const uint32_t Length() const;
-        const FRAME_TYPE Type() const;
-        const uint8_t Flags() const;
-        const uint32_t StreamId() const;
-        const bool Reserved() const;
+        const uint32_t length() const;
+        const FRAME_TYPE type() const;
+        const uint8_t flags() const;
+        const uint32_t stream_id() const;
+        const bool reserved() const;
 
-        void SetFlags(uint8_t flags);
-        void ClearFlags(uint8_t flags);
-        bool HasFlags(uint8_t flags) const;
+        void set_flags(uint8_t flags);
+        void clear_flags(uint8_t flags);
+        bool has_flags(uint8_t flags) const;
 
-        void SetStreamId(uint32_t streamId);
+        void set_stream_id(uint32_t streamId);
 
         static Frame* RecvFrame(const int fd, hpack::Table& hpack_table, bool debug = false);
         static int SendFrame(const int fd, Frame* frame, hpack::Table& hpack_table, bool debug = false);
@@ -121,20 +121,20 @@ namespace lhttp2 {
         DataFrame(Buffer data, uint8_t pad_length = 0);
         ~DataFrame();
 
-        const uint8_t PadLength() const;
-        const Buffer& Data() const;
+        const uint8_t pad_length() const;
+        const Buffer& data() const;
 
-        void SetPadLength(uint8_t pad_length);
-        void SetData(Buffer& data);
+        void set_pad_length(uint8_t pad_length);
+        void set_data(Buffer& data);
 
-        bool HasEndStreamFlag() const;
-        bool HasPaddedFlag() const;
+        bool has_end_stream_flag() const;
+        bool has_padded_flag() const;
 
-        void SetEndStreamFlag();
-        void SetPaddedFlag();
+        void set_end_stream_flag();
+        void set_padded_flag();
 
-        void ClearEndStreamFlag();
-        void ClearPaddedFlag();
+        void clear_end_stream_flag();
+        void clear_padded_flag();
 
     private:
         Buffer* EncodeFramePayload(hpack::Table& hpack_table) override;
@@ -172,35 +172,35 @@ namespace lhttp2 {
         HeadersFrame(std::vector<hpack::HeaderFieldRepresentation> header_list, hpack::Table& hpack_table, bool exclusive, uint32_t stream_dependency, uint8_t weight, uint8_t pad_length = 0);
         ~HeadersFrame();
 
-        const uint8_t PadLength() const;
-        const bool Exclusive() const;
-        const uint32_t StreamDependency() const;
-        const uint8_t Weight() const;
-        const std::vector<hpack::HeaderFieldRepresentation>& HeaderList() const;
-        const Buffer& HeaderBlockFragment() const;
+        const uint8_t pad_length() const;
+        const bool exclusive() const;
+        const uint32_t stream_dependency() const;
+        const uint8_t weight() const;
+        const std::vector<hpack::HeaderFieldRepresentation>& header_list() const;
+        const Buffer& header_block_fragment() const;
 
-        void SetPadLength(uint8_t pad_length);
-        void SetExclusive(bool exclusive);
-        void SetStreamDependency(uint32_t stream_dependency);
-        void SetWeight(uint8_t weight);
-        void SetHeaderList(std::vector<hpack::HeaderFieldRepresentation> header_list, hpack::Table& hpack_table);
+        void set_pad_length(uint8_t pad_length);
+        void set_exclusive(bool exclusive);
+        void set_stream_dependency(uint32_t stream_dependency);
+        void set_weight(uint8_t weight);
+        void set_header_list(std::vector<hpack::HeaderFieldRepresentation> header_list, hpack::Table& hpack_table);
 
-        void UpdateHeaderBlockFragment(hpack::Table& hpack_table);
+        void update_header_block_fragment(hpack::Table& hpack_table);
 
-        bool HasEndStreamFlag() const;
-        bool HasEndHeadersFlag() const;
-        bool HasPaddedFlag() const;
-        bool HasPriorityFlag() const;
+        bool has_end_stream_flag() const;
+        bool has_end_headers_flag() const;
+        bool has_padded_flag() const;
+        bool has_priority_flag() const;
 
-        void SetEndStreamFlag();
-        void SetEndHeadersFlag();
-        void SetPaddedFlag();
-        void SetPriorityFlag();
+        void set_end_stream_flag();
+        void set_end_headers_flag();
+        void set_padded_flag();
+        void set_priority_flag();
 
-        void ClearEndStreamFlag();
-        void ClearEndHeadersFlag();
-        void ClearPaddedFlag();
-        void ClearPriorityFlag();
+        void clear_end_stream_flag();
+        void clear_end_headers_flag();
+        void clear_padded_flag();
+        void clear_priority_flag();
 
     private:
         Buffer* EncodeFramePayload(hpack::Table& hpack_table) override;
@@ -234,13 +234,13 @@ namespace lhttp2 {
         PriorityFrame(bool exclusive, uint32_t stream_dependency, uint8_t weight);
         ~PriorityFrame();
 
-        const bool Exclusive() const;
-        const uint32_t StreamDependency() const;
-        const uint8_t Weight() const;
+        const bool exclusive() const;
+        const uint32_t stream_dependency() const;
+        const uint8_t weight() const;
 
-        void SetExclusive(bool exclusive);
-        void SetStreamDependency(uint32_t stream_dependency);
-        void SetWeight(uint8_t weight);
+        void set_exclusive(bool exclusive);
+        void set_stream_dependency(uint32_t stream_dependency);
+        void set_weight(uint8_t weight);
 
     private:
         Buffer* EncodeFramePayload(hpack::Table& hpack_table) override;
@@ -270,8 +270,8 @@ namespace lhttp2 {
         RSTStreamFrame(uint32_t error_code);
         ~RSTStreamFrame();
 
-        const uint32_t ErrorCode() const;
-        void SetErrorCode(uint32_t error_code);
+        const uint32_t error_code() const;
+        void set_error_code(uint32_t error_code);
 
     private:
         Buffer* EncodeFramePayload(hpack::Table& hpack_table) override;
@@ -311,12 +311,12 @@ namespace lhttp2 {
         SettingsFrame(lhttp2::Settings settings);
         ~SettingsFrame();
 
-        const lhttp2::Settings& Settings() const;
-        void SetSettings(lhttp2::Settings& settings);
+        const lhttp2::Settings& settings() const;
+        void set_settings(lhttp2::Settings& settings);
 
-        bool HasAckFlag();
-        void SetAckFlag();
-        void ClearAckFlag();
+        bool has_ack_flag();
+        void set_ack_flag();
+        void clear_ack_flag();
 
     private:
         Buffer* EncodeFramePayload(hpack::Table& hpack_table) override;
@@ -351,24 +351,24 @@ namespace lhttp2 {
         PushPromisFrame(uint32_t promised_stream_id, Buffer header_block_fragment, uint8_t pad_length = 0);
         ~PushPromisFrame();
 
-        const uint8_t PadLength() const;
+        const uint8_t pad_length() const;
         const bool Reserved() const;
-        const uint32_t PromisedStreamId() const;
-        const Buffer& HeaderBlockFragment() const;
+        const uint32_t promised_stream_id() const;
+        const Buffer& header_block_fragment() const;
 
-        void SetPadLength(uint8_t pad_length);
-        void SetReserved(bool reserved);
-        void SetPromisedStreamId(uint32_t promised_stream_id);
-        void SetHeaderBlockFragment(Buffer& header_block_fragment);
+        void set_pad_length(uint8_t pad_length);
+        void set_reserved(bool reserved);
+        void set_promised_stream_id(uint32_t promised_stream_id);
+        void set_header_block_fragment(Buffer& header_block_fragment);
 
-        bool HasEndHeadersFlag();
-        bool HasPaddedFlag();
+        bool has_end_headers_flag();
+        bool has_padded_flag();
 
-        void SetEndHeadersFlag();
-        void SetPaddedFlag();
+        void set_end_headers_flag();
+        void set_padded_flag();
         
-        void ClearEndHeadersFlag();
-        void ClearPaddedFlag();
+        void clear_end_headers_flag();
+        void clear_padded_flag();
 
     private:
         Buffer* EncodeFramePayload(hpack::Table& hpack_table) override;
@@ -401,12 +401,12 @@ namespace lhttp2 {
         PingFrame(uint64_t opaque_data);
         ~PingFrame();
 
-        const uint64_t OpaqueData() const;
-        void SetOpaqueData(uint64_t opaque_data);
+        const uint64_t opaque_data() const;
+        void set_opaque_data(uint64_t opaque_data);
 
-        bool HasAckFlag();
-        void SetAckFlag();
-        void ClearAckFlag();
+        bool has_ack_flag();
+        void set_ack_flag();
+        void clear_ack_flag();
 
     private:
         Buffer* EncodeFramePayload(hpack::Table& hpack_table) override;
@@ -439,15 +439,15 @@ namespace lhttp2 {
         GoawayFrame(uint32_t last_stream_id, uint32_t error_code, Buffer additional_debug_data);
         ~GoawayFrame();
 
-        const bool Reserved() const;
-        const uint32_t LastStreamId() const;
-        const uint32_t ErrorCode() const;
-        const Buffer& AdditionalDebugData() const;
+        const bool reserved() const;
+        const uint32_t last_stream_id() const;
+        const uint32_t error_code() const;
+        const Buffer& additional_debug_data() const;
 
-        void SetReserved(bool reserved);
-        void SetLastStreamId(uint32_t last_stream_id);
-        void SetErrorCode(uint32_t error_code);
-        void SetAdditionalDebugData(Buffer& additional_debug_data);
+        void set_reserved(bool reserved);
+        void set_last_stream_id(uint32_t last_stream_id);
+        void set_error_code(uint32_t error_code);
+        void set_additional_debug_data(Buffer& additional_debug_data);
 
     private:
         Buffer* EncodeFramePayload(hpack::Table& hpack_table) override;
@@ -475,11 +475,11 @@ namespace lhttp2 {
         WindowUpdateFrame(uint32_t window_size_increment);
         ~WindowUpdateFrame();
 
-        const bool Reserved() const;
-        const uint32_t windowSizeIncrement() const;
+        const bool reserved() const;
+        const uint32_t window_size_increment() const;
 
-        void SetReserved(bool reserved);
-        void SetWindowSizeIncrement(int window_size_increment);
+        void set_reserved(bool reserved);
+        void set_window_size_increment(int window_size_increment);
 
     private:
         Buffer* EncodeFramePayload(hpack::Table& hpack_table) override;
@@ -508,12 +508,12 @@ namespace lhttp2 {
         ContinuationFrame(Buffer& header_block_fragment);
         ~ContinuationFrame();
 
-        const Buffer& HeaderBlockFragment() const;
-        void SetHeaderBlockFragment(Buffer& header_block_fragment);
+        const Buffer& header_block_fragment() const;
+        void set_header_block_fragment(Buffer& header_block_fragment);
 
-        bool HasEndHeadersFlag();
-        void SetEndHeadersFlag();
-        void ClearEndHeadersFlag();
+        bool has_end_headers_flag();
+        void set_end_headers_flag();
+        void clear_end_headers_flag();
 
     private:
         Buffer* EncodeFramePayload(hpack::Table& hpack_table) override;

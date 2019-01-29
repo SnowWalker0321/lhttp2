@@ -45,6 +45,14 @@ namespace lhttp2 {
         hpack::Table hpack_table_;
         bool use_huffman_ = true;
     };
+
+    class Server : public Connection {
+        void Listen();
+    };
+
+    class Client : public Connection {
+        void Connect();
+    };
 };
 
 #endif

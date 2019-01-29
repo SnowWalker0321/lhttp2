@@ -6,19 +6,19 @@
 namespace lhttp2 {
     class Settings {
     public:
-        const uint32_t HeaderTableSize() const;
-        const bool EnablePush() const;
-        const uint32_t MaxConcurrentStream() const;
-        const uint32_t InitialWindowSize() const;
-        const uint32_t MaxFrameSize() const;
-        const uint32_t MaxHeaderListSize() const;
+        const uint32_t header_table_size() const;
+        const bool enable_push() const;
+        const uint32_t max_concurrent_stream() const;
+        const uint32_t initial_window_size() const;
+        const uint32_t max_frame_size() const;
+        const uint32_t max_header_list_size() const;
 
-        void SetHeaderTableSize(uint32_t header_table_size);
-        void SetEnablePush(bool enable_push);
-        void SetMaxConcurrentStream(uint32_t max_concurrent_stream);
-        void SetInitialWindowSize(uint32_t initial_window_size);
-        void SetMaxFrameSize(uint32_t max_frame_size);
-        void SetMaxHeaderListSize(uint32_t max_header_list_size);
+        void set_header_table_size(uint32_t header_table_size);
+        void set_enable_push(bool enable_push);
+        void set_max_concurrent_stream(uint32_t max_concurrent_stream);
+        void set_initial_window_size(uint32_t initial_window_size);
+        void set_max_frame_size(uint32_t max_frame_size);
+        void set_max_header_list_size(uint32_t max_header_list_size);
 
     private:
         uint32_t header_table_size_ = 0x1000;
