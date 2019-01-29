@@ -352,7 +352,7 @@ namespace lhttp2 {
         ~PushPromisFrame();
 
         const uint8_t pad_length() const;
-        const bool Reserved() const;
+        const bool reserved() const;
         const uint32_t promised_stream_id() const;
         const Buffer& header_block_fragment() const;
 
